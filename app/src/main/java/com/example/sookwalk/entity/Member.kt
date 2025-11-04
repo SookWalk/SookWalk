@@ -13,5 +13,7 @@ data class Member(
     var isNotice: Boolean,
     var isTracked: Boolean,
     var isDark: Boolean,
-    val phonNumber: String
+    val phonNumber: String,
+
+    val test: String
 )
