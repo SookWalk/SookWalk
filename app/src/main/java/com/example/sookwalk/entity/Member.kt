@@ -12,5 +12,6 @@ data class Member(
     val password: String,
     var isNotice: Boolean,
     var isTracked: Boolean,
-    var isDark: Boolean
+    var isDark: Boolean,
+    val phonNumber: String
 )
