@@ -15,7 +15,10 @@ import androidx.compose.material.icons.filled.NotificationsNone
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 // TopBar 함수 호출 시, 현재 화면의 이름을 함께 넘긴다
-fun TopBar(screenName: String) {
+fun TopBar(
+    screenName: String,
+    onMenuClick: () -> Unit // 드로어 열림/닫힘 제어를 받아올 함수
+) {
     TopAppBar(
         navigationIcon = {
             IconButton(onClick = { /* Handle settings click */ }) {
@@ -27,7 +30,7 @@ fun TopBar(screenName: String) {
             IconButton(onClick = { /* Handle settings click */ }) {
                 Icon(Icons.Default.NotificationsNone, contentDescription = "Notifications")
             }
-            IconButton(onClick = { /* Handle settings click */ }) {
+            IconButton(onClick = onMenuClick) {
                 Icon(Icons.Default.Menu, contentDescription = "Navigation Drawer")
             }
         }
