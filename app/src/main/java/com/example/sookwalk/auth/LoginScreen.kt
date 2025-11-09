@@ -1,6 +1,5 @@
 package com.example.sookwalk.auth
 
-import android.R.attr.password
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,14 +12,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,14 +28,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import com.example.sookwalk.R
+import com.example.sookwalk.ui.theme.Grey80
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,7 +50,8 @@ fun LoginScreen(
     Scaffold{ padding ->
         Box(
             modifier = Modifier
-                .fillMaxSize(),
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -80,7 +82,8 @@ fun LoginScreen(
                     onValueChange = { id = it },
                     label = { Text("아이디")},
                     modifier = Modifier
-                        .fillMaxWidth(0.9f)
+                        .fillMaxWidth(0.9f),
+
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -89,10 +92,10 @@ fun LoginScreen(
                 var password by remember { mutableStateOf("") }
                 TextField(
                     value = password,
-                    onValueChange = { id = it },
+                    onValueChange = { password = it },
                     label = { Text("비밀번호")},
                     modifier = Modifier
-                        .fillMaxWidth(0.9f)
+                        .fillMaxWidth(0.9f),
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -100,6 +103,10 @@ fun LoginScreen(
                 // 로그인 버튼
                 Button(
                     onClick = { /* 로그인 처리 로직 */ },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        contentColor = MaterialTheme.colorScheme.background
+                    ),
                     modifier = Modifier
                         .fillMaxWidth(0.9f),
                     shape = RoundedCornerShape(24.dp)
