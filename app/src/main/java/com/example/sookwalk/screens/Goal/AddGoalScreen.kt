@@ -110,17 +110,6 @@ fun StepsInputSection() {
                 selected = (selectedChip == chipText),
                 onClick = { selectedChip = if (selectedChip == chipText) null else chipText },
                 label = { Text(chipText) },
-
-//                colors = FilterChipDefaults.filterChipColors(
-//                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-//                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-//                    containerColor = MaterialTheme.colorScheme.surface,
-//                    labelColor = MaterialTheme.colorScheme.onSurface,
-//                ),
-//                border = FilterChipDefaults.filterChipBorder(
-//                    selectedBorderColor = MaterialTheme.colorScheme.primary,
-//                    borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-//                )
             )
         }
     }
@@ -171,13 +160,6 @@ fun DateSelectionSection() {
             label = { Text("mm/dd/yyyy") },
             readOnly = true, // 직접 입력 대신 DatePicker로 선택
             modifier = Modifier.weight(1f),
-//            colors = OutlinedTextFieldDefaults.colors(
-//                focusedBorderColor = MaterialTheme.colorScheme.primary,
-//                unfocusedBorderColor = Color.Gray,
-//                cursorColor = MaterialTheme.colorScheme.primary,
-//                focusedLabelColor = MaterialTheme.colorScheme.primary,
-//                unfocusedLabelColor = Color.Gray
-//            ),
         )
     }
     Spacer(modifier = Modifier.height(16.dp))
@@ -190,17 +172,6 @@ fun DateSelectionSection() {
                 selected = (selectedDuration == durationText),
                 onClick = { selectedDuration = if (selectedDuration == durationText) null else durationText },
                 label = { Text(durationText) },
-//                colors = FilterChipDefaults.filterChipColors(
-//                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-//                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary, // 👈 'selectedContentColor'에서 수정
-//                    containerColor = MaterialTheme.colorScheme.surface,
-//                    labelColor = MaterialTheme.colorScheme.onSurface,
-//                ),
-//                border = FilterChipDefaults.filterChipBorder(
-//                    selectedBorderColor = MaterialTheme.colorScheme.primary,
-//                    borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-//                ),
-//                modifier = Modifier.weight(1f)
             )
         }
     }
@@ -260,19 +231,17 @@ fun CompletedButton() {
     }
 }
 
-// --- 하단 네비게이션 (GoalScreenM3에서 재활용) ---
+// --- 하단 네비게이션 ---
 @Composable
 fun ChallengeCreateBottomNavigation() {
-    // GoalScreenM3의 GoalBottomNavigationM3 함수를 그대로 사용
-    // BottomNavItem 데이터 클래스는 이전에 정의된 것을 사용해야 합니다.
-    GoalBottomNavigationM3()
+
 }
 
 // --- 프리뷰 ---
 @Preview(showBackground = true)
 @Composable
 fun ChallengeCreateScreenPreview() {
-    SookWalkTheme(dynamicColor = false) { // 다이나믹 컬러 비활성화하여 CustomLightColorScheme 적용
+    SookWalkTheme(dynamicColor = false) {
         ChallengeCreateScreen(onMenuClick = {})
     }
 }
