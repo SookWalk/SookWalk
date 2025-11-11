@@ -1,10 +1,10 @@
-package com.example.sookwalk.entity
+package com.example.sookwalk.data.local.entity.user
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "members")
-data class Member(
+data class `UserEntity.kt`(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val email: String,
     val nickname: String,
