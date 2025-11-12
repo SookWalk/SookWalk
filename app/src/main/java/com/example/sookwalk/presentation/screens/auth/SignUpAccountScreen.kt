@@ -49,9 +49,11 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.intellij.lang.annotations.JdkConstants
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -270,6 +272,36 @@ fun SignUpAccountScreen(
                             }
                         )
                     }
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 6.dp),
+                        horizontalAlignment = Alignment.Start
+                    ){
+                        // 비밀번호 일치 여부 메시지
+                        if (confirmPassword.isNotEmpty()) {
+                            if (confirmPassword == password) {
+                                Text(
+                                    text = "비밀번호가 일치합니다.",
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(4.dp),
+                                )
+                            } else {
+                                Text(
+                                    text = "비밀번호가 일치하지 않습니다.",
+                                    color = Color.Red,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(4.dp),
+                                )
+                            }
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(6.dp))
                 }
 
