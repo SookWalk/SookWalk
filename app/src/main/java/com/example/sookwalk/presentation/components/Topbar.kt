@@ -1,6 +1,5 @@
-package com.example.sookwalk.screens
+package com.example.sookwalk.presentation.components
 
-import android.R.attr.navigationIcon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -12,9 +11,7 @@ import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
-import com.example.sookwalk.ui.theme.SookWalkTheme
 
 
 @OptIn(ExperimentalMaterial3Api::class)
