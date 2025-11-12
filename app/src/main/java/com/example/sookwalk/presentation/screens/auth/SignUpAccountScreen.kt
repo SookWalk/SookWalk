@@ -102,7 +102,7 @@ fun SignUpAccountScreen(
             ) {
                 Button(
                     onClick = { /* 페이지 이동 로직 */ },
-                    shape = RoundedCornerShape(50),
+                    shape = RoundedCornerShape(28),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.tertiary,
                         contentColor = Color.White
@@ -160,7 +160,7 @@ fun SignUpAccountScreen(
                         ) {
                             Button(
                                 onClick = { /* 아이디 중복 확인 로직 */ },
-                                shape = RoundedCornerShape(50),
+                                shape = RoundedCornerShape(28),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.tertiary,
                                     contentColor = Color.White
@@ -324,7 +324,7 @@ fun SignUpAccountScreen(
                         ) {
                             Button(
                                 onClick = { /* 인증 번호 확인 로직 */ },
-                                shape = RoundedCornerShape(50),
+                                shape = RoundedCornerShape(28),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.tertiary,
                                     contentColor = Color.White
