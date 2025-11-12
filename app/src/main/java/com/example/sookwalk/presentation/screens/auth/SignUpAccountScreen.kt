@@ -66,6 +66,7 @@ fun SignUpAccountScreen(
     var id by remember { mutableStateOf("") }
 
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var isVisible by remember { mutableStateOf(false) }
 
 
@@ -132,7 +133,11 @@ fun SignUpAccountScreen(
                         // 아이디 입력 문구
                         Row {
                             Text("아이디 ", style = MaterialTheme.typography.bodyLarge)
-                            Text(" *", color = Color.Red, style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                " *",
+                                color = Color.Red,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
 
                         // 아이디 입력 TextField
@@ -183,7 +188,11 @@ fun SignUpAccountScreen(
                     Column(modifier = Modifier.padding(8.dp)) {
                         Row {
                             Text("비밀번호 ", style = MaterialTheme.typography.bodyLarge)
-                            Text(" *", color = Color.Red, style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                " *",
+                                color = Color.Red,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
 
                         // 비밀번호 입력 TextField
@@ -224,12 +233,14 @@ fun SignUpAccountScreen(
                     Column(modifier = Modifier.padding(8.dp)) {
                         Row {
                             Text("비밀번호 확인 ", style = MaterialTheme.typography.bodyLarge)
-                            Text(" *", color = Color.Red, style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                " *",
+                                color = Color.Red,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
 
                         // 비밀번호 확인 TextField
-                        var confirmPassword by remember { mutableStateOf("") }
-
                         TextField(
                             value = confirmPassword,
                             onValueChange = { confirmPassword = it },
@@ -267,7 +278,11 @@ fun SignUpAccountScreen(
                     Column(modifier = Modifier.padding(8.dp)) {
                         Row {
                             Text("숙명 구글 이메일 ", style = MaterialTheme.typography.bodyLarge)
-                            Text(" *", color = Color.Red, style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                " *",
+                                color = Color.Red,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
 
                         // 이메일 입력 TextField
@@ -295,7 +310,11 @@ fun SignUpAccountScreen(
                     Column(modifier = Modifier.padding(8.dp)) {
                         Row {
                             Text("인증번호 ", style = MaterialTheme.typography.bodyLarge)
-                            Text(" *", color = Color.Red, style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                " *",
+                                color = Color.Red,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
 
                         // 인증 번호 입력 TextField
