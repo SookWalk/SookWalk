@@ -88,4 +88,11 @@ dependencies {
     implementation(libs.maps.compose)
     // 현재 위치(FusedLocation)용
     implementation(libs.play.services.location)
+    // 현재 위치 기반 지도 표시
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+
+    // Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
+
+    implementation("com.google.firebase:firebase-analytics")
 }
