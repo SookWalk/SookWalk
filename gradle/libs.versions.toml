@@ -63,7 +63,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
-#Hilt
+#Hiltaaaaaaaaaa
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 hilt-lifecycle-vm-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-compose", version.ref = "hiltNavCompose" }
@@ -71,6 +71,7 @@ hilt-lifecycle-vm-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-c
 #DataStore
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 
+#Map
 maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "mapCompose" }
 play-services-location = {module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 
