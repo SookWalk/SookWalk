@@ -1,28 +1,19 @@
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.* // Material 3 import
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.sookwalk.screens.TopBar
 import com.example.sookwalk.ui.theme.SookWalkTheme
@@ -30,9 +21,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
@@ -41,9 +30,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import android.Manifest
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.font.Font
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -166,8 +155,6 @@ fun MapScreen(
                     )
                 }
 
-//                Spacer(Modifier.height(12.dp))
-
                 // 즐겨찾기 FAB
                 FloatingActionButton(
                     onClick = { /* 별 버튼 클릭 시 동작 */ },
@@ -193,6 +180,17 @@ fun MapScreen(
                     snippet = "예시 마커"
                 )
             }
+
+            var query by remember { mutableStateOf("") }
+            var active by remember { mutableStateOf(false) }
+
+            MapSearchBar(
+                query = query,
+                onQueryChange = { query = it },
+                onSearch = { /* 검색 */ },
+                active = active,
+                onActiveChange = { active = it }
+            )
 
             // 권한이 없을 때 안내 배너
             if (!isLocationEnabled) {
@@ -231,6 +229,44 @@ fun MapScreen(
 }
 private val SEOUL = LatLng(37.5665, 126.9780)
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MapSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onSearch: (String) -> Unit,
+    active: Boolean,
+    onActiveChange: (Boolean) -> Unit
+) {
+    DockedSearchBar(
+        query = query,
+        onQueryChange = onQueryChange,
+        onSearch = { onSearch(query) },
+        active = active,
+        onActiveChange = onActiveChange,
+        placeholder = { Text("Hinted search text") },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Default.Menu,
+                contentDescription = null
+            )
+        },
+        trailingIcon = {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null
+            )
+        },
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth(),
+        colors = SearchBarDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            dividerColor = Color.Transparent
+        ),
+        shape = RoundedCornerShape(28.dp)
+    ) { /* Search suggestions 넣고 싶으면 여기 */ }
+}
 
 
 
