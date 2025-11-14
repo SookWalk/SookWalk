@@ -4,9 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
-
-    alias(libs.plugins.google.secrets)
-    alias(libs.plugins.google.services)
 }
 
 android {
@@ -97,4 +94,16 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
 
     implementation("com.google.firebase:firebase-analytics")
+
+    // Retrofit + OkHttp
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    implementation("com.squareup.moshi:moshi:1.15.0")
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
+    implementation("com.squareup.moshi:moshi-kotlin-codegen:1.15.0")
+
+    implementation("androidx.lifecycle:lifecyce-viewmodel-compose:2.8.0")
+
 }
