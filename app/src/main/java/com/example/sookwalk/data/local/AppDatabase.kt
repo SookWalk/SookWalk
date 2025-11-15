@@ -5,8 +5,9 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.sookwalk.data.local.entity.user.UserEntity
 
-@Database(entities = [/*엔티티 입력*/], version = 1, exportSchema = false)
+@Database(entities = [UserEntity::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     /* Dao 접근 함수 */
