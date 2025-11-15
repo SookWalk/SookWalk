@@ -1,4 +1,4 @@
-package com.example.sookwalk.screens
+package com.example.sookwalk.presentation.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
