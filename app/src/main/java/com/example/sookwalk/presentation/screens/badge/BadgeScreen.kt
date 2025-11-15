@@ -20,8 +20,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.sookwalk.R // 이미지 리소스 R 임포트
-import com.example.sookwalk.screens.TopBar
+import com.example.sookwalk.R
+import com.example.sookwalk.presentation.components.TopBar
 import com.example.sookwalk.ui.theme.SookWalkTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,7 +37,7 @@ fun BadgeScreen(
             )
         },
         bottomBar = {
-            GoalBottomNavigation()
+
         },
     ) { paddingValues ->
         Column(
