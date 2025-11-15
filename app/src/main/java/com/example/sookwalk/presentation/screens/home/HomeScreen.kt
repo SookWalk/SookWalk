@@ -1,4 +1,4 @@
-package com.example.sookwalk.screens.home
+package com.example.sookwalk.presentation.screens.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +17,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -26,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sookwalk.R
-import com.example.sookwalk.screens.TopBar
+import com.example.sookwalk.presentation.components.TopBar
 import com.example.sookwalk.ui.theme.Grey20
 import java.time.LocalDate
 import java.time.format.TextStyle

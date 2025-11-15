@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.sookwalk.presentation.viewmodel.SettingsViewModel
-import com.example.sookwalk.screens.TopBar
+import com.example.sookwalk.presentation.components.TopBar
 
 @Preview(showBackground = true)
 @Composable
