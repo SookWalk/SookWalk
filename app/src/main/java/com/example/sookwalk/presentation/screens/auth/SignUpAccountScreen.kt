@@ -1,7 +1,7 @@
 package com.example.sookwalk.presentation.screens.auth
 
-import android.R.attr.navigationIcon
-import android.R.attr.password
+import android.R.attr.onClick
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,9 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -29,7 +27,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextFieldDefaults.contentPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -37,6 +34,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,37 +42,38 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.sookwalk.presentation.viewmodel.UserViewModel
-import org.intellij.lang.annotations.JdkConstants
+import com.example.sookwalk.presentation.viewmodel.AuthViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.functions.functions
+import kotlinx.coroutines.coroutineScope
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpAccountScreen(
-    viewModel: UserViewModel,
+    viewModel: AuthViewModel,
     // navController: NavController,
     // backStackEntry: NavBackStackEntry
 ) {
 
-    var id by remember { mutableStateOf("") }
+    var loginId by remember { mutableStateOf("") }
     var isAvailableId by remember { mutableStateOf(false) } // 아이디 사용 가능 여부
+    var isAvailableIdMsg by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") } // 비밀번호 확인
     var isVisible by remember { mutableStateOf(false) } // 비밀번호 가시성
+    var email by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf("") } // OTP 코드
     var isAuthencated by remember { mutableStateOf(false) } // 이메일 인증 여부
     var moveNextEnabled by remember { mutableStateOf(false) } // 다음 페이지 이동
 
     // 모든 요건을 만족하면 다음 페이지로 이동한다
-    if(isAvailableId && isAuthencated && password == confirmPassword){
+    if (isAvailableId && isAuthencated && password == confirmPassword) {
         moveNextEnabled = true
     }
 
@@ -152,8 +151,8 @@ fun SignUpAccountScreen(
 
                         // 아이디 입력 TextField
                         TextField(
-                            value = id,
-                            onValueChange = { id = it },
+                            value = loginId,
+                            onValueChange = { loginId = it },
                             modifier = Modifier
                                 .fillMaxWidth(),
                             singleLine = true,
@@ -173,8 +172,25 @@ fun SignUpAccountScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
                         ) {
+                            Text(
+                                text = isAvailableIdMsg,
+                                color = Color.Red,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
                             Button(
-                                onClick = { /* 아이디 중복 확인 로직 */ },
+                                onClick = {
+                                    val available = viewModel.isLoginIdAvailable
+
+                                    if (available.value) {
+                                        isAvailableIdMsg = "사용 가능한 아이디입니다."
+                                        isAvailableId = true
+                                    } else {
+                                        isAvailableIdMsg = "이미 존재하는 아이디입니다."
+                                    }
+                                },
                                 shape = RoundedCornerShape(28),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.tertiary,
@@ -289,7 +305,7 @@ fun SignUpAccountScreen(
                             .fillMaxWidth()
                             .padding(start = 6.dp),
                         horizontalAlignment = Alignment.Start
-                    ){
+                    ) {
                         // 비밀번호 일치 여부 메시지
                         if (confirmPassword.isNotEmpty()) {
                             if (confirmPassword == password) {
@@ -341,7 +357,59 @@ fun SignUpAccountScreen(
                                 cursorColor = Color.DarkGray
                             ),
                         )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Button(
+                                onClick = {
+                                    Firebase.auth.signInAnonymously()
+                                        .addOnCompleteListener { task ->
+                                            if (task.isSuccessful) {
+                                                val functions =
+                                                    Firebase.functions("asia-northeast3") // region 설정
+                                                val sendOtp = functions.getHttpsCallable("sendOtp")
+                                                val user = Firebase.auth.currentUser
+
+                                                if (user != null) {
+                                                    sendOtp.call(hashMapOf("email" to email))
+                                                        .addOnSuccessListener { result ->
+
+                                                            Log.d(
+                                                                "OTP",
+                                                                "OTP 전송 성공: ${result.data}"
+                                                            )
+
+                                                        }
+                                                        .addOnFailureListener { e ->
+                                                            Log.e("OTP", "OTP 전송 실패: ${e.message}")
+
+                                                        }
+                                                } else {
+                                                    Log.e("Auth", "익명 로그인 후 user가 null입니다.")
+                                                }
+                                            } else {
+                                                Log.e("Auth", "로그인 실패: ${task.exception}")
+
+                                            }
+                                        }
+                                },
+                                shape = RoundedCornerShape(28),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiary,
+                                    contentColor = Color.White
+                                ),
+                                contentPadding = PaddingValues(
+                                    horizontal = 16.dp,
+                                    vertical = 8.dp
+                                )
+                            ) {
+                                Text("인증 번호 전송", style = MaterialTheme.typography.displaySmall)
+                            }
+                        }
                     }
+
                     Spacer(modifier = Modifier.height(6.dp))
                 }
 
@@ -382,7 +450,18 @@ fun SignUpAccountScreen(
                             horizontalArrangement = Arrangement.End
                         ) {
                             Button(
-                                onClick = { /* 인증 번호 확인 로직 */ },
+                                onClick = {
+                                    val functions = Firebase.functions("asia-northeast3") // region 설정
+                                    val verifyOtp = functions.getHttpsCallable("verifyOtp")
+
+                                    verifyOtp.call(hashMapOf("email" to email, "otp" to code))
+                                        .addOnSuccessListener { result ->
+                                            Log.d("OTP", "인증 성공: ${result.data}")
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Log.e("OTP", "인증 실패: ${e.message}")
+                                        }
+                                },
                                 shape = RoundedCornerShape(28),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.tertiary,
