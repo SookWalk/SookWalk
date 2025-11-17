@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "499299655614",
-    "project_id": "sookwalk-aea89",
-    "storage_bucket": "sookwalk-aea89.firebasestorage.app"
+    "project_number": "551080150775",
+    "project_id": "example01-7a394",
+    "storage_bucket": "example01-7a394.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:499299655614:android:cea443db558899ccbfa3ef",
+        "mobilesdk_app_id": "1:551080150775:android:83dd9a6464b879effc75f2",
         "android_client_info": {
-          "package_name": "com.example.sookwalk"
+          "package_name": "com.example.MosoLab"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAqpD3DMyCrIc0sx7t90J2tFfMncEvDgzw"
+          "current_key": "AIzaSyBBM7EAbBZeDOOJDkl4AXXU8KrGlB4MrfA"
         }
       ],
       "services": {

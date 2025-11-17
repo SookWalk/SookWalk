@@ -10,3 +10,9 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.hilt) apply false
 }
+
+buildscript {
+    dependencies {
+        classpath("com.google.gms:google-services:4.4.4")
+    }
+}
