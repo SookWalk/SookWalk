@@ -53,23 +53,30 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.sookwalk.presentation.viewmodel.UserViewModel
 import org.intellij.lang.annotations.JdkConstants
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Preview
 fun SignUpAccountScreen(
-    // viewModel: TodoViewModel,
+    viewModel: UserViewModel,
     // navController: NavController,
     // backStackEntry: NavBackStackEntry
 ) {
 
     var id by remember { mutableStateOf("") }
-
+    var isAvailableId by remember { mutableStateOf(false) } // 아이디 사용 가능 여부
     var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var isVisible by remember { mutableStateOf(false) }
+    var confirmPassword by remember { mutableStateOf("") } // 비밀번호 확인
+    var isVisible by remember { mutableStateOf(false) } // 비밀번호 가시성
+    var isAuthencated by remember { mutableStateOf(false) } // 이메일 인증 여부
+    var moveNextEnabled by remember { mutableStateOf(false) } // 다음 페이지 이동
+
+    // 모든 요건을 만족하면 다음 페이지로 이동한다
+    if(isAvailableId && isAuthencated && password == confirmPassword){
+        moveNextEnabled = true
+    }
 
 
     Scaffold(
@@ -105,6 +112,7 @@ fun SignUpAccountScreen(
             ) {
                 Button(
                     onClick = { /* 페이지 이동 로직 */ },
+                    enabled = moveNextEnabled,
                     shape = RoundedCornerShape(28),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.tertiary,
