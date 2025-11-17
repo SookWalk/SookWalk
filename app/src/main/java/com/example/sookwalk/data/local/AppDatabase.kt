@@ -5,9 +5,20 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.sookwalk.data.local.entity.user.UserEntity
+import com.example.sookwalk.data.local.dao.FavoritePlaceDao
+import com.example.sookwalk.data.local.entity.map.CategoryPlaceCrossRef
+import com.example.sookwalk.data.local.entity.map.FavoriteCategoryEntity
+import com.example.sookwalk.data.local.entity.map.FavoritePlaceEntity
 
-@Database(entities = [UserEntity::class], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        FavoritePlaceEntity::class,
+        FavoriteCategoryEntity::class, // (추가) 그룹
+        CategoryPlaceCrossRef::class
+    ],
+    version = 2,
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
 
     /* Dao 접근 함수 */
@@ -25,4 +36,6 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
     }
+
+    abstract fun favoritePlaceDao(): FavoritePlaceDao
 }
