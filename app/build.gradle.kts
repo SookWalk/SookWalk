@@ -7,8 +7,6 @@ plugins {
 
     alias(libs.plugins.google.secrets)
     alias(libs.plugins.google.services)
-
-    id ("com.google.gms.google-services") // Google Services Plugin 추가
 }
 
 android {
