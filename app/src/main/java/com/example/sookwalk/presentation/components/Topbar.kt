@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.graphics.Color
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,7 +24,8 @@ fun TopBar(
 ) {
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background, // 배경색
+            // 배경색, 지도 화면의 경우에는 투명하게 한다.
+            containerColor = if(screenName == "지도") Color.Transparent else MaterialTheme.colorScheme.background,
         ),
 
         navigationIcon = {
