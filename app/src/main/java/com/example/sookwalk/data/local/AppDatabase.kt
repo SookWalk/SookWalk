@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.sookwalk.data.local.dao.StepDao
+import com.example.sookwalk.data.local.entity.steps.DailyStepEntity
 import com.example.sookwalk.data.local.entity.user.UserEntity
 
 @Database(entities = [UserEntity::class], version = 1, exportSchema = false)
@@ -25,4 +27,9 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
     }
+}
+
+@Database(entities = [DailyStepEntity::class], version = 1)
+abstract class StepDatabase : RoomDatabase() {
+    abstract fun stepDao(): StepDao
 }

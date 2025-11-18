@@ -3,6 +3,8 @@ package com.example.sookwalk.di
 import android.content.Context
 import androidx.room.Room
 import com.example.sookwalk.data.local.AppDatabase
+import com.example.sookwalk.data.local.StepDatabase
+import com.example.sookwalk.data.local.dao.StepDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -44,4 +46,21 @@ object AppModule {
     }
 
     */
+
+    @Provides
+    @Singleton
+    fun provideStepDatabase(
+        @ApplicationContext context: Context
+    ): StepDatabase {
+        return Room.databaseBuilder(
+            context,
+            StepDatabase::class.java,
+            "step_database"
+        ).build()
+    }
+
+    @Provides
+    fun provideStepDao(stepDatabase: StepDatabase): StepDao {
+        return stepDatabase.stepDao()
+    }
 }
