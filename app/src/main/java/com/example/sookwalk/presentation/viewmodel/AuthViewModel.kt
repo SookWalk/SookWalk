@@ -3,7 +3,7 @@ package com.example.sookwalk.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sookwalk.data.local.entity.user.UserEntity
-import com.example.sookwalk.data.repository.UserRepository
+import com.example.sookwalk.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,8 +13,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class UserViewModel @Inject constructor
-    (private val repository: UserRepository): ViewModel()
+class AuthViewModel @Inject constructor
+    (private val repository: AuthRepository): ViewModel()
 {
     var _isLoginIdAvailable = MutableStateFlow<Boolean>(false)
     val isLoginIdAvailable = _isLoginIdAvailable
@@ -29,13 +29,6 @@ class UserViewModel @Inject constructor
     fun insertNewAccount(user: UserEntity){
         viewModelScope.launch{
             repository.insertNewAccount(user)
-        }
-    }
-
-    // 회원 삭제
-    fun deleteAccount(user: UserEntity){
-        viewModelScope.launch{
-            repository.deleteAccount(user)
         }
     }
 
