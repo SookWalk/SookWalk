@@ -21,13 +21,11 @@ class StepRepository @Inject constructor(
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    // -------- Room --------
-
+    // Room
     suspend fun getStepsOfDate(date: String): Int {
         return stepDao.getSteps(date) ?: 0
     }
 
-    // 오늘 걸음수를 delta 만큼 증가시키고, 증가 후 총 합을 리턴
     suspend fun addStepsForToday(delta: Int): Int {
         val today = LocalDate.now().toString()
         val current = stepDao.getSteps(today) ?: 0
@@ -40,8 +38,7 @@ class StepRepository @Inject constructor(
         return stepDao.getStepsBetween(start, end)
     }
 
-    // -------- DataStore (총 누적 / 마지막 센서값) --------
-
+    // DataStore (총 누적 / 마지막 센서값)
     suspend fun getLastCounter(): Float? =
         StepCounterDataStore.readLastCounter(context)
 
@@ -58,8 +55,7 @@ class StepRepository @Inject constructor(
         return newValue
     }
 
-    // -------- Firebase --------
-
+    // Firebase
     private fun currentUserId(): String? = auth.currentUser?.uid
 
     suspend fun uploadDailySteps(date: String, steps: Int) {

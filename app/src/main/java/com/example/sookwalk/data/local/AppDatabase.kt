@@ -16,7 +16,7 @@ import com.example.sookwalk.data.local.entity.user.UserEntity
 @Database(
     entities = [
         UserEntity::class,
-//        StepEntity::class,
+        DailyStepEntity::class,
         NotificationEntity::class,
         GoalEntity::class
     ],
@@ -30,6 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
 //    abstract fun stepDao(): StepDao
     abstract fun notificationDao(): NotificationDao
     abstract fun goalDao(): GoalDao
+    abstract fun stepDao(): StepDao
 
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
@@ -44,9 +45,4 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
     }
-}
-
-@Database(entities = [DailyStepEntity::class], version = 1)
-abstract class StepDatabase : RoomDatabase() {
-    abstract fun stepDao(): StepDao
 }
