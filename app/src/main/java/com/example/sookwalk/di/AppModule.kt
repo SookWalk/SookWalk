@@ -3,13 +3,16 @@ package com.example.sookwalk.di
 import android.content.Context
 import androidx.room.Room
 import com.example.sookwalk.data.local.AppDatabase
+import com.example.sookwalk.data.local.dao.GoalDao
+import com.example.sookwalk.data.local.dao.NotificationDao
+import com.example.sookwalk.data.repository.GoalRepository
+import com.example.sookwalk.data.repository.NotificationRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import jakarta.inject.Singleton
-import kotlin.jvm.java
 
 
 @Module // 이 클래스가 Hilt에 의존성을 제공함을 알림
@@ -44,4 +47,26 @@ object AppModule {
     }
 
     */
+
+    // Notification
+    @Provides
+    fun provideNotificationDao(appDatabase: AppDatabase): NotificationDao {
+        return appDatabase.notificationDao()
+    }
+
+    @Provides
+    fun provideNotificationRepository(notificationDao: NotificationDao): NotificationRepository {
+        return NotificationRepository(notificationDao)
+    }
+
+    // Goal
+    @Provides
+    fun provideGoalDao(appDatabase: AppDatabase): GoalDao {
+        return appDatabase.goalDao()
+    }
+
+    @Provides
+    fun provideGoalRepository(goalDao: GoalDao): GoalRepository {
+        return GoalRepository(goalDao)
+    }
 }

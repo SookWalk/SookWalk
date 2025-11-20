@@ -103,7 +103,6 @@ dependencies {
 
     // Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
-
     implementation("com.google.firebase:firebase-analytics")
 
     // Retrofit + OkHttp
@@ -121,15 +120,17 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
 
-    // Firebase (BOM)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
+    // Firebase
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.functions)
+    implementation(libs.firebase.storage)
 
     // Credential Manager + Google ID
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.google.identity.googleid)
+
+    // Coil
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }
