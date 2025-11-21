@@ -2,10 +2,7 @@ package com.example.sookwalk.presentation.screens.map
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,218 +11,155 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.sookwalk.presentation.viewmodel.PlacesViewModel
-import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.PhotoMetadata
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.net.FetchPhotoRequest
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.sp
 
-data class Places(
+// 데이터 모델
+data class PlacesData(
     val name: String,
     val category: String,
     val distance: String,
-    val address: String,
-    val imageUrls: List<String>,
-    val isFavorite: Boolean
+    val address: String
 )
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlacesBottomSheet(
-    viewModel: PlacesViewModel,
-    onItemClick: (Place) -> Unit,
-    onDismiss: () -> Unit
+    onDismissRequest: () -> Unit
 ) {
+    val sheetState = rememberModalBottomSheetState()
 
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false
+    val PlacesList = listOf(
+        PlacesData("털보네떡꼬치", "한식", "12km", "서울특별시 용산구 갈월동 93-60 1층"),
+        PlacesData("땡초떡볶이", "떡볶이", "12km", "서울특별시 용산구 청파동3가 24-28 1층"),
+        PlacesData("조현우국밥 숙대점", "국밥", "12km", "서울특별시 용산구 청파동3가 24-30 1층"),
+        PlacesData("와플하우스", "카페", "13km", "서울특별시 용산구 청파동2가 71-75")
     )
 
-    val uiState by viewModel.uiState.collectAsState()
-
+    // 바텀 시트 본체
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle()
-        }
+        containerColor = Color.White, // 배경 흰색
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
-
-        // ⭐ 내부 스크롤 영역
+        // 리스트 영역
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 20.dp)
+            contentPadding = PaddingValues(bottom = 40.dp) // 하단 여백
         ) {
-            items(uiState) { model ->
-                PlacesItem(
-                    place = model.place,
-                    isFavorite = model.isFavorite,
-                    onFavoriteClick = { viewModel.onFavoriteClick(model.place.id!!) },
-                    onClick = { onItemClick(model.place) }
+            items(PlacesList) { data ->
+                PlaceItemUI(data)
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = 0.5.dp,
+                    color = Color.LightGray.copy(alpha = 0.5f)
                 )
-                Divider(color = Color(0xFFE0E0E0))            }
+            }
         }
     }
 }
 
-
 @Composable
-fun PlacesItem(
-    place: Place,
-    isFavorite: Boolean,
-    onFavoriteClick: () -> Unit,
-    onClick: () -> Unit
-) {
+fun PlaceItemUI(data: PlacesData) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .padding(16.dp)
     ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = data.name,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = data.category,
+                color = Color.Gray,
+                fontSize = 14.sp
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = "별점",
+                tint = Color(0xFFFFC107), // Amber/Gold 색상
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = "더보기",
+                tint = Color.LightGray,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = "${data.distance} · ${data.address}",
+            color = Color.Gray,
+            fontSize = 13.sp,
+            maxLines = 1
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-
-                Text(
-                    text = place.displayName ?: "",
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                Text(
-                    text = mapPlaceType(place.primaryType),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-
-                place.formattedAddress?.let {
-                    Text(
-                        text = it,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
-                }
-            }
-
-            IconButton(onClick = onFavoriteClick) {
-                Icon(
-                    imageVector = if (isFavorite) Icons.Default.Star
-                    else Icons.Default.StarBorder,
-                    contentDescription = null,
-                    tint = if (isFavorite) Color(0xFFFFD600) else Color.Gray
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        val photos = place.photoMetadatas?.take(3) ?: emptyList()
-
-        if (photos.isNotEmpty()) {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(photos) { metadata ->
-                    GooglePlacePhoto(metadata)
+            repeat(3) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.LightGray.copy(alpha = 0.3f))
+                ) {
+                    // 실제 이미지 넣을 땐 여기에 AsyncImage 사용
+                    // 예: AsyncImage(model = url, contentScale = ContentScale.Crop, ...)
                 }
             }
         }
     }
 }
 
+@Preview(showBackground = true)
 @Composable
-fun GooglePlacePhoto(
-    metadata: PhotoMetadata,
-    modifier: Modifier = Modifier
-        .size(110.dp)
-        .clip(RoundedCornerShape(12.dp))
-) {
-    val context = LocalContext.current
-    val placesClient = remember { Places.createClient(context) }
+fun PreviewOnlyBottomSheet() {
+    val showSheet = remember { mutableStateOf(true) }
 
-    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-
-    LaunchedEffect(metadata) {
-        val request = FetchPhotoRequest.builder(metadata)
-            .setMaxWidth(600)
-            .setMaxHeight(600)
-            .build()
-
-        placesClient.fetchPhoto(request)
-            .addOnSuccessListener { response ->
-                bitmap = response.bitmap
-            }
-            .addOnFailureListener {
-                bitmap = null
-            }
-    }
-
-    if (bitmap != null) {
-        Image(
-            bitmap = bitmap!!.asImageBitmap(),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = modifier
-        )
-    } else {
-        Box(
-            modifier = modifier.background(Color.LightGray),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(18.dp)
-            )
-        }
+    if (showSheet.value) {
+        PlacesBottomSheet(onDismissRequest = { showSheet.value = false })
     }
 }
-fun mapPlaceType(type: String?): String {
-    return when (type) {
-        "korean_restaurant" -> "한식"
-        "restaurant" -> "식당"
-        "cafe" -> "카페"
-        "bar" -> "술집"
-        "bakery" -> "베이커리"
-        "meal_delivery" -> "배달"
-        "meal_takeaway" -> "포장"
-        else -> type ?: "기타"
-    }
-}
-// ViewModel이 Composable에게 전달할 최종 데이터 모델
-data class PlaceUiModel(
-    val place: Place,        // Google Place 원본 객체
-    val isFavorite: Boolean  // 조합이 완료된 즐겨찾기 상태
-)
