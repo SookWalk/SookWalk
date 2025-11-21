@@ -5,15 +5,12 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "users")
 data class UserEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true)
+    val userId: Int = 0,
+    val majorId: Int,
     val email: String,
-    val nickname: String,
-    val loginId: String,
-    val password: String,
-    var isNotice: Boolean,
-    var isTracked: Boolean,
-    var isDark: Boolean,
-    val phonNumber: String,
-
-    val test: String
+    var nickname: String,
+    var loginId: String,
+    var password: String,
+    var profileImageUrl: String
 )
