@@ -1,7 +1,5 @@
 package com.example.sookwalk.presentation.screens.map
 
-import android.graphics.Bitmap
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,7 +55,6 @@ fun PlacesBottomSheet(
         PlacesData("와플하우스", "카페", "13km", "서울특별시 용산구 청파동2가 71-75")
     )
 
-    // 바텀 시트 본체
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
@@ -65,9 +62,8 @@ fun PlacesBottomSheet(
         shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
-        // 리스트 영역
         LazyColumn(
-            contentPadding = PaddingValues(bottom = 40.dp) // 하단 여백
+            contentPadding = PaddingValues(bottom = 40.dp)
         ) {
             items(PlacesList) { data ->
                 PlaceItemUI(data)
@@ -110,7 +106,7 @@ fun PlaceItemUI(data: PlacesData) {
             Icon(
                 imageVector = Icons.Default.Star,
                 contentDescription = "별점",
-                tint = Color(0xFFFFC107), // Amber/Gold 색상
+                tint = Color(0xFFFFC107),
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
