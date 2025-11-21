@@ -22,9 +22,10 @@ interface UserDao{
     @Update
     suspend fun update(user: UserEntity)
 
-    @Query("UPDATE users SET major = :major WHERE nickname = :nickname")
-    suspend fun updateNicknameMajor(nickname: String, major: String)
+    @Query("UPDATE users SET nickname = :newNickname, major = :newMajor")
+    suspend fun updateNicknameAndMajor(newNickname: String, newMajor: String)
 
-    @Query("UPDATE users SET profileImageUrl = :profileImageUrl WHERE nickname = :nickname")
-    suspend fun updateProfileImage(profileImage: String)
+    @Query("UPDATE users SET profileImageUrl = :newProfileImageUrl")
+    suspend fun updateProfileImageUrl(newProfileImageUrl: String)
+
 }
