@@ -185,12 +185,3 @@ fun ChallengeListItem(title: String, subtitle: String) {
 }
 
 data class BottomNavItem(val label: String, val icon: ImageVector)
-
-
-@Preview(showBackground = true)
-@Composable
-fun GoalScreenPreview() {
-    SookWalkTheme(dynamicColor = false) {
-        GoalScreen(onMenuClick = {})
-    }
-}
