@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -17,6 +18,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,25 +38,70 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.sookwalk.R
 import com.example.sookwalk.presentation.components.TopBar
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.storage.storage
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
-fun MyPageEditScreen() {
+fun MyPageEditScreen(
+
+) {
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
 
+    // 로컬 화면에 띄울 이미지 Uri
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // 프로필 사진의 삭제 여부 저장
+    var isProfileImageDeleted by remember { mutableStateOf(false)}
+
+    // firebase storage에서 '기존에' 불러온 프로필 이미지 URL
+    var profileImageUrlFromStorage by remember { mutableStateOf<String?>(null) }
 
     // 갤러리에서 콘텐츠를 가져오는 런처
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
-            selectedImageUri = uri
-            showBottomSheet = false
+            uri?.let { imageUri ->
+                // 우선 ui에 선택 이미지를 띄운다
+                selectedImageUri = imageUri
+                // 바텀 시트 닫기
+                showBottomSheet = false
+            }
         }
     )
+
+    // 2. 화면 시작 시, Storage에서 이미지 URL 가져오기
+    // LaunchedEffect(true)는 이 Composable이 처음 Composition될 때 딱 한 번만 실행됩니다.
+    LaunchedEffect(key1 = true) {
+        val uid = Firebase.auth.currentUser?.uid
+        if (uid != null) {
+            // 하위 위치를 나타내는 참조 생성
+            val storageRef = Firebase.storage.reference.child("images/$uid/profile.jpg")
+            storageRef.downloadUrl
+                .addOnSuccessListener { uri ->
+                    // URL을 성공적으로 가져오면 상태에 저장
+                    profileImageUrlFromStorage = uri.toString()
+                }
+                .addOnFailureListener { exception ->
+                    // --- 여기가 바로 수정된 부분입니다 ---
+                    // 실패 원인을 확인하여, '파일이 없는 경우'는 정상적인 케이스로 간주합니다.
+                    if (exception is com.google.firebase.storage.StorageException &&
+                        exception.errorCode == com.google.firebase.storage.StorageException.ERROR_OBJECT_NOT_FOUND) {
+                        // 프로필 사진이 원래 없는 경우 (예: 신규 가입자)
+                        // 이것은 오류가 아니므로, 조용히 null로 처리
+                        Log.d("MyPageEdit", "프로필 이미지가 스토리지에 존재하지 않습니다. (정상 케이스)")
+                    } else {
+                        Log.d("MyPageEditScreen", "기존 프로필 이미지를 불러오는 데 실패했습니다.")
+                    }
+                    profileImageUrlFromStorage = null
+                }
+        }
+    }
 
     // 권한을 요청하는 런처
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -103,7 +151,16 @@ fun MyPageEditScreen() {
                         modifier = Modifier.fillMaxWidth(0.7f).aspectRatio(1f)
                     ) {
                         AsyncImage(
-                            model = ImageRequest.Builder(context).data(selectedImageUri ?: R.drawable.test).crossfade(true).build(),
+                            model = ImageRequest.Builder(context)
+                                .data(
+                                    selectedImageUri // 1. 새로 선택한 이미지를 최우선
+                                        ?: if(!isProfileImageDeleted){
+                                        profileImageUrlFromStorage // 2. Storage 이미지
+                                    } else{
+                                        null // 3. 삭제되었으면 null -> placeholder 보여주기
+                                        }
+                                        ?: R.drawable.default_profile_image // 4. 조건 모두 불만족, 기본 이미지
+                                ).crossfade(true).build(),
                             contentDescription = "Profile Image",
                             modifier = Modifier.fillMaxSize().padding(12.dp).clip(CircleShape).clickable { showBottomSheet = true },
                             contentScale = ContentScale.Crop,
@@ -184,7 +241,49 @@ fun MyPageEditScreen() {
                 item {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                         Button(
-                            onClick = { /* 이전 페이지로 넘어가는 로직 */ },
+                            onClick = {
+                                // 새 이미지가 업로드 된 경우, 업로드 실행
+                                selectedImageUri?.let { imageUri ->
+                                    uploadImageToFirebase(
+                                        imageUri = imageUri,
+                                        onSuccess = { downloadUrl ->
+                                            Log.d("UpdateProfile", "이미지 업로드 성공: $downloadUrl")
+                                        },
+                                        onFailure = { exception ->
+                                            Log.e("UpdateProfile", "이미지 업로드 실패", exception)
+                                        }
+                                    )
+                                }
+
+                                // 이미지가 삭제된 경우
+                                if(isProfileImageDeleted){
+                                    deleteImageFromFirebase(
+                                        onSuccess = {
+                                            Log.d("deleteProfile", "Firebase Storage에서 이미지 삭제 성공")
+                                        },
+                                        onFailure = { exception ->
+                                            // 파일이 원래 없어서 발생하는 오류는 무시해도 괜찮습니다.
+                                            if (exception is com.google.firebase.storage.StorageException &&
+                                                exception.errorCode == com.google.firebase.storage.StorageException.ERROR_OBJECT_NOT_FOUND
+                                            ) {
+                                                Log.d("UpdateProfile", "삭제할 이미지가 스토리지에 원래 없었음.")
+                                                // 이 경우에도 DB의 URL은 삭제 처리해야 하므로, 성공 로직을 태울 수 있습니다.
+                                                // TODO: ViewModel을 통해 서버 DB의 이미지 URL 필드를 null로 업데이트
+                                            } else {
+                                                Log.e(
+                                                    "UpdateProfile",
+                                                    "Firebase Storage 이미지 삭제 실패",
+                                                    exception
+                                                )
+                                            }
+                                        })
+                                }
+
+
+                                /* 뒤로 가기 로직 */
+
+
+                            },
                             shape = RoundedCornerShape(28),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary, contentColor = Color.White),
                             modifier = Modifier.padding(8.dp)
@@ -228,7 +327,8 @@ fun MyPageEditScreen() {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     Box(
                         modifier = Modifier.fillMaxWidth().clickable {
-                            selectedImageUri = null
+                            selectedImageUri = null // 미리보기 이미지 제거
+                            isProfileImageDeleted = true // 삭제되었음을 상태로 기록
                             showBottomSheet = false
                         },
                         contentAlignment = Alignment.Center
