@@ -5,9 +5,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.* // Material 3 import로 변경
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,7 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.sookwalk.screens.TopBar
+import androidx.navigation.compose.rememberNavController
+import com.example.sookwalk.presentation.components.BottomNavBar
+import com.example.sookwalk.presentation.components.TopBar
 import com.example.sookwalk.ui.theme.SookWalkTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,10 +31,12 @@ fun GoalScreen(
         topBar = {
             TopBar(
                 screenName = "목표",
-                onMenuClick = onMenuClick
+                onBack = {},
+                onMenuClick = onMenuClick,
+                onAlarmClick = {}
             )
         },
-        bottomBar = { GoalBottomNavigation() },
+        bottomBar = { BottomNavBar(navController = rememberNavController()) },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
@@ -54,13 +57,12 @@ fun GoalScreen(
 }
 
 
-// --- 2. 캘린더 카드 (M3 DatePicker 사용) ---
+// 캘린더 카드 (M3 DatePicker 사용)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarCard() {
-    // M3 DatePicker의 상태를 기억합니다.
     val datePickerState = rememberDatePickerState(
-        // 초기 선택된 날짜 (Epoch Millis) - 2025년 8월 17일
+        // 초기 선택된 날짜 (Epoch Millis)
         initialSelectedDateMillis = 1755481200000L
     )
 
@@ -71,17 +73,16 @@ fun CalendarCard() {
         ),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        // M3에서 공식 제공하는 캘린더 UI
         DatePicker(
             state = datePickerState,
             title = null,
             headline = null,
             showModeToggle = false, // 날짜/연도 선택 토글 숨김
             colors = DatePickerDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.primary, // 카드 배경과 동일하게
-                selectedDayContainerColor = Color(0xFFB2D4BD), // 선택된 날짜 배경 (디자인의 연두색)
+                containerColor = MaterialTheme.colorScheme.primary,
+                selectedDayContainerColor = Color(0xFFB2D4BD),
                 selectedDayContentColor = Color.White,
-                todayDateBorderColor = MaterialTheme.colorScheme.surface, // 오늘 날짜 테두리
+                todayDateBorderColor = MaterialTheme.colorScheme.surface,
                 todayContentColor = MaterialTheme.colorScheme.surface,
                 dayContentColor = MaterialTheme.colorScheme.onSurface,
                 yearContentColor = MaterialTheme.colorScheme.onSurface,
@@ -89,7 +90,7 @@ fun CalendarCard() {
                 selectedYearContentColor = MaterialTheme.colorScheme.surface,
                 weekdayContentColor = Color.Gray,
 
-                navigationContentColor = MaterialTheme.colorScheme.onSurface, // 'navigationIconContentColor' -> 'navigationContentColor'
+                navigationContentColor = MaterialTheme.colorScheme.onSurface,
                 subheadContentColor = MaterialTheme.colorScheme.onSurface
             )
         )
@@ -97,7 +98,7 @@ fun CalendarCard() {
 }
 
 
-// --- 3. 챌린지 카드 (M3 ListItem 사용) ---
+// 챌린지 카드 (M3 ListItem 사용)
 @Composable
 fun ChallengesCard() {
     Card(
@@ -112,7 +113,6 @@ fun ChallengesCard() {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // 상단: 걸음 수 + 챌린지 추가 버튼
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -146,7 +146,6 @@ fun ChallengesCard() {
     }
 }
 
-// M3 ListItem을 활용한 챌린지 아이템
 @Composable
 fun ChallengeListItem(title: String, subtitle: String) {
     ListItem(
@@ -157,7 +156,7 @@ fun ChallengeListItem(title: String, subtitle: String) {
             Text(subtitle, fontSize = 12.sp, color = Color.Gray)
         },
         leadingContent = {
-            // 프로필 이미지 (원형 플레이스홀더)
+            // 프로필 이미지
             Box(
                 modifier = Modifier
                     .size(25.dp)
@@ -179,68 +178,13 @@ fun ChallengeListItem(title: String, subtitle: String) {
             }
         },
         colors = ListItemDefaults.colors(
-            containerColor = Color.Transparent // 카드 배경색을 그대로 사용
+            containerColor = Color.Transparent
         ),
         modifier = Modifier.padding(vertical = 4.dp)
     )
 }
 
-
-// --- 4. 하단 네비게이션 (M3 NavigationBar) ---
-@Composable
-fun GoalBottomNavigation() {
-    var selectedItem by remember { mutableStateOf(1) } // "Goals"가 선택된 상태
-    val items = listOf(
-        BottomNavItem("Home", Icons.Default.Home),
-        BottomNavItem("Goals", Icons.Default.Flag),
-        BottomNavItem("Rank", Icons.Default.Leaderboard),
-        BottomNavItem("Map", Icons.Default.Map)
-    )
-
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = Color.Black,
-        tonalElevation = 0.dp
-    ) {
-        items.forEachIndexed { index, item ->
-            val isSelected = selectedItem == index
-
-            NavigationBarItem(
-                icon = {
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            // 선택되면 primary 색상, 아니면 투명
-                            .background(
-                                if (isSelected) MaterialTheme.colorScheme.primary
-                                else Color.Transparent
-                            )
-                            .padding(if (isSelected) 10.dp else 4.dp), // 패딩으로 크기 조절
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            item.icon,
-                            contentDescription = item.label,
-                            modifier = Modifier.size(if (isSelected) 24.dp else 28.dp),
-                        )
-                    }
-                },
-                label = { Text(item.label, fontSize = 11.sp) },
-                selected = isSelected,
-                onClick = { selectedItem = index },
-
-//                colors = NavigationBarItemDefaults.colors(
-////                    selectedTextColor = MaterialTheme.colorScheme.surface,
-//                    unselectedTextColor = Color.Gray,
-//                    indicatorColor = Color.Transparent // 인디케이터 색상을 투명하게
-//                ),
-                alwaysShowLabel = true // 항상 라벨 표시
-            )
-        }
-    }
-}
-
-data class BottomNavItem(val label: String, val icon: ImageVector) // 데이터 클래스는 동일
+data class BottomNavItem(val label: String, val icon: ImageVector)
 
 
 @Preview(showBackground = true)
