@@ -27,13 +27,12 @@ class GoalViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ): ViewModel() {
 
-    private val today: LocalDate
-            = LocalDate.now()
+    private val today: LocalDate = LocalDate.now()
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     private val weekStart: LocalDate = today.with(DayOfWeek.MONDAY)
     private val weekEnd: LocalDate = weekStart.plusDays(6)
 
-    val todayGoals: Flow<GoalEntity?> =
+    val todayGoal: Flow<GoalEntity?> =
         goalRepository.getGoalsByDate(today.format(formatter))
             .map {list -> list.firstOrNull()}
             .stateIn(

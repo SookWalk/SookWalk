@@ -1,6 +1,7 @@
 package com.example.sookwalk.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -13,10 +14,11 @@ import com.example.sookwalk.presentation.screens.home.HomeScreen
 import com.example.sookwalk.presentation.screens.home.RankingScreen
 import com.example.sookwalk.presentation.viewmodel.GoalViewModel
 import com.example.sookwalk.presentation.viewmodel.NotificationViewModel
+import com.example.sookwalk.presentation.viewmodel.RankingViewModel
 import com.example.sookwalk.presentation.viewmodel.SettingsViewModel
 
 @Composable
-fun NavGraph(navController: NavHostController) {
+fun NavGraph(navController: NavHostController,modifier: Modifier = Modifier) {
 //    val authViewModel: AuthViewModel = hiltViewModel() // 회원가입
 //    val userViewModel: UserViewModel = hiltViewModel() // 마이페이지 등
 
@@ -26,7 +28,9 @@ fun NavGraph(navController: NavHostController) {
     // ....
     val settingsViewModel: SettingsViewModel = hiltViewModel() // 환경 설정
     val goalViewModel: GoalViewModel = hiltViewModel()
+    val rankingViewModel: RankingViewModel = hiltViewModel()
     val notificationViewModel: NotificationViewModel = hiltViewModel()
+
 
     NavHost(navController = navController, startDestination = Routes.LOGIN) {
 
@@ -42,8 +46,12 @@ fun NavGraph(navController: NavHostController) {
         ////// TopBar에서 쓰이는 경로 //////
 
         // 알림 페이지
-        composable(Routes.ALARM) {
-            AlarmScreen(notificationViewModel, navController)
+        composable(Routes.NOTIFICATION) {
+            AlarmScreen(
+                notificationViewModel, navController,
+                onBack = { navController.popBackStack() },
+                onAlarmClick = {navController.navigate(Routes.NOTIFICATION)},
+                onMenuClick = {/*드로어 열림/닫힘 제어를 받아올 함수*/})
         }
 
         // 마이 페이지
@@ -58,7 +66,12 @@ fun NavGraph(navController: NavHostController) {
 
         // 환경 설정
         composable(Routes.SETTINGS) {
-            SettingsScreen(settingsViewModel, navController)
+            SettingsScreen(
+                settingsViewModel, navController,
+                onBack = { navController.popBackStack() },
+                onAlarmClick = {navController.navigate(Routes.NOTIFICATION)},
+                onMenuClick = {/*드로어 열림/닫힘 제어를 받아올 함수*/}
+            )
         }
 
 
@@ -67,7 +80,13 @@ fun NavGraph(navController: NavHostController) {
 
         // 메인 홈
         composable(Routes.HOME) {
-            HomeScreen(userViewModel, /* 등등..? */ , navController)
+            HomeScreen(
+                goalViewModel,stepViewModel, /* 등등..? */  navController,
+                onBack = { navController.popBackStack() },
+                onAlarmClick = {navController.navigate(Routes.NOTIFICATION)},
+                onMenuClick = {/*드로어 열림/닫힘 제어를 받아올 함수*/},
+                onRankingBtnClick = {navController.navigate(Routes.RANK)}
+            )
         }
 
         // 목표
@@ -77,7 +96,12 @@ fun NavGraph(navController: NavHostController) {
 
         // 랭킹
         composable(Routes.RANK) {
-            RankingScreen(viewModel, navController)
+            RankingScreen(
+                rankingViewModel, navController,
+                onBack = { navController.popBackStack() },
+                onAlarmClick = {navController.navigate(Routes.NOTIFICATION)},
+                onMenuClick = {/*드로어 열림/닫힘 제어를 받아올 함수*/}
+                )
         }
 
         // 지도

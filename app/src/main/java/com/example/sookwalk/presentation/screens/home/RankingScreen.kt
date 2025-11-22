@@ -33,8 +33,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.sookwalk.R
+import com.example.sookwalk.navigation.BottomNavItem
+import com.example.sookwalk.presentation.components.BottomNavBar
 import com.example.sookwalk.presentation.components.TopBar
+import com.example.sookwalk.presentation.viewmodel.RankingViewModel
 import com.example.sookwalk.ui.theme.Grey20
 import com.google.common.math.LinearTransformation.horizontal
 
@@ -42,6 +46,11 @@ import com.google.common.math.LinearTransformation.horizontal
 @Composable
 fun RankingScreen(
 //        context: Context
+    rankingViewModel: RankingViewModel,
+    navController: NavController,
+    onBack: () -> Unit, // 뒤로 가기 함수 (단방향 흐름)
+    onAlarmClick: () -> Unit,
+    onMenuClick: () -> Unit // 드로어 열림/닫힘 제어를 받아올 함수
 ){
     var rankList = remember {
         mutableStateListOf(
@@ -59,11 +68,14 @@ fun RankingScreen(
     }
 
     Scaffold (
-        topBar ={
+        topBar = {
             TopBar(
                 "랭킹",
-                onMenuClick = {}
+                onBack, onAlarmClick, onMenuClick
             )
+        },
+        bottomBar = {
+            BottomNavBar(navController)
         }
     ){ innerPadding ->
         Column (

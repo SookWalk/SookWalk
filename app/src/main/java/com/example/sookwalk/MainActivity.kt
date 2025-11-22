@@ -12,6 +12,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.rememberNavController
+import com.example.sookwalk.navigation.NavGraph
 import com.example.sookwalk.presentation.viewmodel.ThemeViewModel
 import com.example.sookwalk.ui.theme.SookWalkTheme
 import com.example.sookwalk.utils.notification.NotificationHelper
@@ -25,6 +27,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeVM: ThemeViewModel = hiltViewModel()
             val isDark by themeVM.isDark.collectAsStateWithLifecycle()
+            val navController = rememberNavController()
 
             NotificationHelper.createNotificationChannel(this)
             askNotificationPermission()
@@ -36,7 +39,7 @@ class MainActivity : ComponentActivity() {
                 darkTheme = isDark,
                 dynamicColor = false
             ) {
-
+                NavGraph(navController)
             }
         }
     }

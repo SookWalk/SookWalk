@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,36 +17,42 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.sookwalk.R
+import com.example.sookwalk.data.local.entity.notification.NotificationEntity
+import com.example.sookwalk.presentation.components.BottomNavBar
 import com.example.sookwalk.presentation.components.TopBar
+import com.example.sookwalk.presentation.viewmodel.NotificationViewModel
 import com.example.sookwalk.ui.theme.Grey20
-import com.example.sookwalk.ui.theme.Grey80
+import com.example.sookwalk.utils.notification.DateUtils.formatTimestamp
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AlarmScreen(){
-    var alarmList = remember { mutableStateListOf(
-        Alarm("알림 제목 1", "설명1 알림입니다", LocalDateTime.now(), false),
-        Alarm("알림 제목 2", "설명2 알림입니다", LocalDateTime.now().minusDays(1), false),
-        Alarm("알림 제목 3", "설명3 알림입니다", LocalDateTime.now().minusDays(2), true),
-        Alarm("알림 제목 4", "설명4 알림입니다", LocalDateTime.now().minusDays(3), true)
-
-    )}
+fun AlarmScreen(
+    notificationViewModel: NotificationViewModel,
+    navController: NavController,
+    onBack: () -> Unit, // 뒤로 가기 함수 (단방향 흐름)
+    onAlarmClick: () -> Unit,
+    onMenuClick: () -> Unit // 드로어 열림/닫힘 제어를 받아올 함수
+){
+    val notificationList = notificationViewModel.notificationList.collectAsState()
 
     Scaffold(
         topBar = {
             TopBar(
                 screenName = "알림",
-                onMenuClick = { }
+                onBack, onAlarmClick, onMenuClick
             )
+        },
+        bottomBar = {
+            BottomNavBar(navController)
         }
     ){ innerPadding ->
        Column(
@@ -53,9 +60,8 @@ fun AlarmScreen(){
                .padding(innerPadding)
        ){
            LazyColumn(){
-                items(alarmList.size){ index ->
-                    val alarm = alarmList[index]
-                    AlarmCard(alarm)
+                items(notificationList.value){ notificationEntity ->
+                    AlarmCard(notificationEntity)
                 }
            }
        }
@@ -65,10 +71,10 @@ fun AlarmScreen(){
 data class Alarm (val title: String, val description: String, val date: LocalDateTime, var isRead: Boolean)
 
 @Composable
-fun AlarmCard(alarm : Alarm){
+fun AlarmCard(notificationEntity: NotificationEntity){
     Card (
         colors = CardDefaults.cardColors(
-        if (alarm.isRead){
+        if (notificationEntity.isRead){
             MaterialTheme.colorScheme.background
         } else {
             MaterialTheme.colorScheme.primary
@@ -90,15 +96,15 @@ fun AlarmCard(alarm : Alarm){
             Spacer(modifier = Modifier.width(4.dp))
             Column {
                 Text(
-                    text = alarm.title,
+                    text = notificationEntity.title,
                     fontSize = 12.sp
                 )
                 Text(
-                    alarm.description,
+                    notificationEntity.message,
                     fontSize = 10.sp
                 )
                 Text(
-                    text ="${alarm.date.year}-${alarm.date.monthValue}-${alarm.date.dayOfMonth} 09:48" ,
+                    text = formatTimestamp(notificationEntity.createdAt) ,
                     fontSize = 12.sp,
                     color = Grey20
                 )

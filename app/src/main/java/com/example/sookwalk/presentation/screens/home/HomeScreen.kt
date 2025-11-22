@@ -25,6 +25,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -35,8 +38,13 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.sookwalk.R
+import com.example.sookwalk.data.local.entity.goal.GoalEntity
+import com.example.sookwalk.presentation.components.BottomNavBar
 import com.example.sookwalk.presentation.components.TopBar
+import com.example.sookwalk.presentation.viewmodel.GoalViewModel
+import com.example.sookwalk.presentation.viewmodel.StepViewModel
 import com.example.sookwalk.ui.theme.Black
 import com.example.sookwalk.ui.theme.Grey20
 import java.time.LocalDate
@@ -47,9 +55,13 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     // TODO: 걸음 수 ViewModel
-//    goalViewModel: GoalViewModel,
-//    navController: NavController,
-//    backStackEntry: NavBackStackEntry
+    goalViewModel: GoalViewModel,
+    stepViewModel: StepViewModel,
+    navController: NavController,
+    onBack: () -> Unit, // 뒤로 가기 함수 (단방향 흐름)
+    onAlarmClick: () -> Unit,
+    onMenuClick: () -> Unit, // 드로어 열림/닫힘 제어를 받아올 함수,
+    onRankingBtnClick: () -> Unit,
     ){
 
     // 오늘 goal을 로드시켜놓도록 한다
@@ -62,21 +74,33 @@ fun HomeScreen(
         )
     }
     val scrollState = rememberScrollState()
+    val weekGoals by goalViewModel.weekGoals.collectAsState(initial = emptyList())
+    // startDate가 "yyyy-MM-dd" 라고 가정 만약 endDate 기준으로 보여줄 거면 it.endDate 로 바꿔.
+//    val goalsByDate: Map<String, List<GoalEntity>> = weekGoals.groupBy { it.startDate }
+    val goalsByDate: Map<LocalDate, List<GoalEntity>> =
+        remember(weekGoals) { expandGoalsToDates(weekGoals) }
+    // 화면 들어올 때 데이터 로딩
+    LaunchedEffect(Unit) {
+        stepViewModel.loadTodaySteps()
 
+    }
 
     Scaffold(
         topBar = {
             TopBar("메인 홈",
-                {}
-                )}
+                onBack, onAlarmClick, onMenuClick
+            )},
+        bottomBar = {
+            BottomNavBar(navController)
+        }
     ){ innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)){
             MainHomeCard(goalList[0])
             WeekTitleCard("주차별")
-            WeekHomeList(scrollState)
+            WeekHomeList(scrollState, goalViewModel)
             WalkHomeCard(1000, 2000)
             Spacer(modifier = Modifier.height(5.dp))
-            RankHomeCard()
+            RankHomeCard(onRankingBtnClick)
         }
     }
 }
@@ -101,7 +125,7 @@ fun MainHomeCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row {
-                MainDateCard("${goal.startDate.monthValue}.${goal.startDate.dayOfMonth}")
+                MainDateCard()
                 Spacer(modifier = Modifier.width(10.dp))
                 Column{
                     Text(
@@ -127,7 +151,8 @@ fun MainHomeCard(
 }
 
 @Composable
-fun MainDateCard(date: String){
+fun MainDateCard(){
+    val today = LocalDate.now()
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primary
@@ -136,8 +161,8 @@ fun MainDateCard(date: String){
         Column(
             modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp)
         ){
-            Text("2025")
-            Text("11-20")
+            Text("${today.dayOfYear}")
+            Text("${today.monthValue} - ${today.dayOfMonth}")
         }
     }
 }
@@ -168,7 +193,8 @@ fun WeekTitleCard(title: String){
 }
 
 @Composable
-fun WeekHomeList(scrollState: ScrollState) {
+fun WeekHomeList(scrollState: ScrollState,
+                 goalViewModel: GoalViewModel) {
     val today = LocalDate.now()
     // 이번 주 월요일
     val weekStart = today.with(java.time.DayOfWeek.MONDAY)
@@ -177,7 +203,10 @@ fun WeekHomeList(scrollState: ScrollState) {
     val weekDates = (0..6).map { offset ->
         weekStart.plusDays(offset.toLong())
     }
+    val weekGoals by goalViewModel.weekGoals.collectAsState(initial = emptyList())
 
+    val goalsByDate: Map<LocalDate, List<GoalEntity>> =
+        remember(weekGoals) { expandGoalsToDates(weekGoals) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -185,16 +214,18 @@ fun WeekHomeList(scrollState: ScrollState) {
             .padding(horizontal = 8.dp)
     ) {
         weekDates.forEach { date ->
+            val goalsOfThatDay = goalsByDate[date].orEmpty()
+
             WeekHomeCard(
                 date = date,
-                text = "예시 텍스트" // 나중에 요일별 목표 같은 걸로 바꿔 넣으면 됨
+                goals = goalsOfThatDay
             )
         }
     }
 }
 
 @Composable
-fun WeekHomeCard(date: LocalDate, text: String){
+fun WeekHomeCard(date: LocalDate, goals: List<GoalEntity>){
     Card (
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primary
@@ -213,13 +244,19 @@ fun WeekHomeCard(date: LocalDate, text: String){
                 )
                 Text("${date.monthValue} .${date.dayOfMonth}(${getKoreanDayOfWeek(date)})")
             }
-            Text("목표 달성")
+            if (goals.isNotEmpty()){
+                goals.forEach { goal ->
+                    Text(goal.title)
+                }
+            } else {
+                Text("목표 없음")
+            }
         }
     }
 }
 
 fun getKoreanDayOfWeek(date: LocalDate): String {
-    return date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.KOREAN)
+    return date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.KOREAN).first().toString()
 }
 
 @Composable
@@ -249,7 +286,7 @@ fun WalkHomeCard(goalWalkCount: Int, walkCount: Int){
                     text = "오늘의 걸음 수",
                     fontWeight = Bold,
                     fontSize = 14.sp
-                    )
+                )
             }
             WalkCountCard()
         }
@@ -257,7 +294,7 @@ fun WalkHomeCard(goalWalkCount: Int, walkCount: Int){
 }
 
 @Composable
-fun WalkCountCard(){
+fun WalkCountCard(goalWalkCnt: Int, todayWalkCnt: Int){
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.background,
@@ -269,13 +306,13 @@ fun WalkCountCard(){
             modifier = Modifier.padding(10.dp)
         ){
             Text(
-                text = "목표 걸음 수: 1000",
+                text = "목표 걸음 수: ${goalWalkCnt}",
                 color  = Grey20
             )
             Row{
                 Icon(Icons.Default.ArrowBackIosNew, "응")
                 Text(
-                    text ="300 걸음",
+                    text ="${todayWalkCnt} 걸음",
                     fontWeight = SemiBold
                 )
             }
@@ -284,7 +321,7 @@ fun WalkCountCard(){
 }
 
 @Composable
-fun RankHomeCard(){
+fun RankHomeCard(onRankingBtnClick: () -> Unit){
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primary
@@ -321,7 +358,7 @@ fun RankHomeCard(){
                 )
             }
             Column {
-                IconButton(onClick = {/* 해당 목표 페이지로 이동 */}) {
+                IconButton(onClick = onRankingBtnClick ) {
                     Image(
                         painter = painterResource(id = R.drawable.arrow_left),
                         contentDescription = "해당 목표 페이지로 이동",
@@ -331,4 +368,22 @@ fun RankHomeCard(){
             }
         }
     }
+}
+
+fun expandGoalsToDates(
+    goals: List<GoalEntity>
+): Map<LocalDate, List<GoalEntity>> {
+    val map = mutableMapOf<LocalDate, MutableList<GoalEntity>>()
+
+    goals.forEach { goal ->
+        val start = LocalDate.parse(goal.startDate) // "yyyy-MM-dd"
+        val end = LocalDate.parse(goal.endDate)
+
+        var d = start
+        while (!d.isAfter(end)) { // start~end inclusive
+            map.getOrPut(d) { mutableListOf() }.add(goal)
+            d = d.plusDays(1)
+        }
+    }
+    return map
 }

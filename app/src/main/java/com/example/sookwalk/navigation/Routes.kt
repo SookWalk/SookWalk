@@ -8,5 +8,4 @@ object Routes {
     const val RANK = "ranking"
     const val NOTIFICATION = "notification"
     const val SETTINGS = "setting"
-    const val ALARM = "alarm"
 }
