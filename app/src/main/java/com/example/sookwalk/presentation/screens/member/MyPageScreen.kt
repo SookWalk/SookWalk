@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.sookwalk.R
@@ -58,7 +59,7 @@ import com.google.firebase.storage.storage
 @Composable
 fun MyPageScreen(
     viewModel: UserViewModel,
-    // navController: NavController,
+    navController: NavController,
     // backStackEntry: NavBackStackEntry
 ) {
 
@@ -72,7 +73,9 @@ fun MyPageScreen(
         topBar = {
             TopBar(
                 screenName = "마이페이지",
-                onMenuClick = { }
+                { navController.popBackStack() },
+                {navController.navigate("alarm")},
+                {}
             )
         }
 
@@ -139,7 +142,7 @@ fun MyPageScreen(
                 // 프로필 수정 버튼
                 item {
                     Button(
-                        onClick = { /* MyPageEditScreen으로 이동 */ },
+                        onClick = { navController.navigate("myPageEdit") },
                         shape = RoundedCornerShape(28),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.tertiary,

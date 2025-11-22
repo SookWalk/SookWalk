@@ -34,6 +34,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.sookwalk.R
@@ -49,8 +51,11 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyPageEditScreen(
-    viewModel: UserViewModel
-) {
+    viewModel: UserViewModel,
+    navController: NavController
+    ) {
+
+    // Firebase에서 현재 유저의 uid를 가져온다
     val uid = Firebase.auth.currentUser?.uid
 
     val context = LocalContext.current
@@ -153,7 +158,11 @@ fun MyPageEditScreen(
     }
 
     Scaffold(
-        topBar = { TopBar(screenName = "마이페이지", onMenuClick = { }) }
+        topBar = {
+            TopBar(screenName = "마이페이지",
+                { navController.popBackStack() },
+                {navController.navigate("alarm")},
+                {}) }
 
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -379,9 +388,8 @@ fun MyPageEditScreen(
                                         "major" to major )
                                     )
                                 }
-
                                 /* 뒤로 가기 로직 */
-
+                                navController.popBackStack()
                             },
                             shape = RoundedCornerShape(28),
                             colors = ButtonDefaults.buttonColors(
