@@ -1,6 +1,5 @@
 package com.example.sookwalk.presentation.screens.auth
 
-import android.R.attr.onClick
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,25 +36,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import com.example.sookwalk.R
+import com.example.sookwalk.navigation.Routes
+import com.example.sookwalk.presentation.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Preview
 fun LoginScreen(
-    // viewModel: TodoViewModel,
-    // navController: NavController,
-    // backStackEntry: NavBackStackEntry
+    viewModel: AuthViewModel,
+    navController: NavController
 ) {
+
+    var loginAvailableMsg by remember { mutableStateOf("") }
+
+    // 아이디 입력 textfield
+    var id by remember { mutableStateOf("") }
+
+    // 비밀번호 입력 textfield
+    var password by remember { mutableStateOf("") }
+    var isVisible by remember { mutableStateOf(false) }
 
     Scaffold { padding ->
         Box(
@@ -97,8 +102,6 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // 아이디 입력 textfield
-                var id by remember { mutableStateOf("") }
 
                 TextField(
                     value = id,
@@ -121,9 +124,6 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 비밀번호 입력 textfield
-                var password by remember { mutableStateOf("") }
-                var isVisible by remember { mutableStateOf(false) }
 
                 TextField(
                     value = password,
@@ -159,11 +159,27 @@ fun LoginScreen(
                     )
                 )
 
+                Text(
+                    text = loginAvailableMsg,
+                    color = Color.Red,
+                    modifier = Modifier.padding(8.dp)
+                )
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // 로그인 버튼
                 Button(
-                    onClick = { /* 로그인 처리 로직 */ },
+                    onClick = {
+                        viewModel.login(id, password)
+
+                        if(viewModel.isLoginSuccess.value) {
+                            // 홈 화면으로 이동
+                            navController.navigate(Routes.HOME)
+                        } else {
+                            loginAvailableMsg = "아이디나 비밀번호가 잘못 되었습니다.\n" +
+                                    "아이디와 비밀번호를 정확히 입력해 주세요."
+                        }
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.tertiary,
                         contentColor = MaterialTheme.colorScheme.background
@@ -190,7 +206,7 @@ fun LoginScreen(
                     Text(
                         "회원가입",
                         modifier = Modifier
-                            .clickable { /* 회원가입 화면 이동 */ }
+                            .clickable { navController.navigate(Routes.ACCOUNT) }
                     )
                 }
             }

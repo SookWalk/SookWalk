@@ -9,18 +9,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.sookwalk.presentation.screens.SettingsScreen
 import com.example.sookwalk.presentation.screens.auth.LoginScreen
+import com.example.sookwalk.presentation.screens.auth.SignUpAccountScreen
+import com.example.sookwalk.presentation.screens.auth.SignUpProfileScreen
 import com.example.sookwalk.presentation.screens.home.AlarmScreen
 import com.example.sookwalk.presentation.screens.home.HomeScreen
 import com.example.sookwalk.presentation.screens.home.RankingScreen
+import com.example.sookwalk.presentation.screens.member.MyPageEditScreen
+import com.example.sookwalk.presentation.screens.member.MyPageScreen
+import com.example.sookwalk.presentation.viewmodel.AuthViewModel
 import com.example.sookwalk.presentation.viewmodel.GoalViewModel
 import com.example.sookwalk.presentation.viewmodel.NotificationViewModel
 import com.example.sookwalk.presentation.viewmodel.RankingViewModel
 import com.example.sookwalk.presentation.viewmodel.SettingsViewModel
+import com.example.sookwalk.presentation.viewmodel.UserViewModel
 
 @Composable
 fun NavGraph(navController: NavHostController,modifier: Modifier = Modifier) {
-//    val authViewModel: AuthViewModel = hiltViewModel() // 회원가입
-//    val userViewModel: UserViewModel = hiltViewModel() // 마이페이지 등
+    val authViewModel: AuthViewModel = hiltViewModel() // 회원가입
+    val userViewModel: UserViewModel = hiltViewModel() // 마이페이지 등
 
     /// 그 외 각자 만든 viewModel들 추가 ( ThemeViewModel 제외 )
     // ....
@@ -37,9 +43,10 @@ fun NavGraph(navController: NavHostController,modifier: Modifier = Modifier) {
         ////// 첫 화면 //////
 
         composable("login") {
-            if (/* 로그인이 되어있을 경우 */) {
-                HomeScreen(UserViewModel, navController)
-            } else LoginScreen(userViewModel, navController)
+             if (/* 로그인이 되어있을 경우 */) {
+                 HomeScreen(userViewModel, navController)
+             } else
+            LoginScreen(authViewModel, navController)
         }
 
 
@@ -118,7 +125,7 @@ fun NavGraph(navController: NavHostController,modifier: Modifier = Modifier) {
         }
 
         composable("signUpProfile") {
-            SignUpProfileScreen(authViewModel, navController)
+            SignUpProfileScreen(authViewModel, userViewModel, navController)
         }
 
         // 마이페이지 수정
