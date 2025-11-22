@@ -8,6 +8,7 @@ import androidx.room.RoomDatabase
 import com.example.sookwalk.data.local.dao.GoalDao
 import com.example.sookwalk.data.local.dao.NotificationDao
 import com.example.sookwalk.data.local.dao.StepDao
+import com.example.sookwalk.data.local.dao.UserDao
 import com.example.sookwalk.data.local.entity.goal.GoalEntity
 import com.example.sookwalk.data.local.entity.notification.NotificationEntity
 import com.example.sookwalk.data.local.entity.steps.DailyStepEntity
@@ -24,7 +25,8 @@ import com.example.sookwalk.data.local.entity.user.UserEntity
 abstract class AppDatabase : RoomDatabase() {
 
     /* Dao 접근 함수 */
-//    abstract fun userDao(): UserDao
+    abstract fun userDao(): UserDao
+
 //    abstract fun stepDao(): StepDao
     abstract fun notificationDao(): NotificationDao
     abstract fun goalDao(): GoalDao
