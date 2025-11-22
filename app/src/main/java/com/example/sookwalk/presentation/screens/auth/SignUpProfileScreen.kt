@@ -1,5 +1,6 @@
 package com.example.sookwalk.presentation.screens.auth
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,9 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Search
@@ -34,6 +33,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,22 +45,27 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.sookwalk.data.local.entity.user.UserEntity
+import com.example.sookwalk.presentation.viewmodel.AuthViewModel
+import com.example.sookwalk.presentation.viewmodel.UserViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.tasks.await
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Preview
 fun SignUpProfileScreen(
-    // viewModel: TodoViewModel,
-    // navController: NavController,
-    // backStackEntry: NavBackStackEntry
+    authViewModel: AuthViewModel,
+    userViewModel: UserViewModel,
+    navController: NavController
 ) {
 
     var nickname by remember { mutableStateOf("") }
 
-    // 🔹 랜덤 닉네임 placeholder 생성
+    // 랜덤 닉네임 placeholder 생성
     val randomPlaceholder = remember {
         val adjectives = listOf("산책하는", "춤추는", "웃는", "노래하는", "잠자는")
         val nouns = listOf("눈송이", "눈결이", "꽃송이", "눈덩이", "눈꽃송이", "튜리", "로로")
@@ -68,25 +73,50 @@ fun SignUpProfileScreen(
         "${adjectives.random()} ${nouns.random()}$number"
     }
 
+    // 닉네임을 입력받지 않았다면 placeholder 값을 사용
+    val finalNickname =
+        if (nickname.isBlank()) randomPlaceholder else nickname
+
     var major by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
 
-    val departments = listOf(
-        "IP·콘텐츠전공",
-        "IT공학전공",
-        "K-POP산업경영전공",
-        "게임콘텐츠디자인전공",
-        "공공인재학전공",
-        "과학저널리즘전공"
-    )
+    var departments by remember { mutableStateOf<List<String>>(emptyList()) }
 
-    // 🔹 입력된 텍스트가 포함된 전공만 필터링
+// 화면이 처음 생성될 때 Firestore에서 모든 전공 목록을 가져옴
+    LaunchedEffect(Unit) {
+        val db = Firebase.firestore
+        val allMajors = mutableListOf<String>()
+
+        try {
+            // 1. 'collages' 컬렉션에 있는 모든 단과대학 문서들을 가져옴
+            val colleges = db.collection("collages").get().await()
+
+            // 2. 각 단과대학 문서에 대해 반복
+            for (collegeDoc in colleges.documents) {
+                // 3. 해당 단과대학의 'majors' 하위 컬렉션에 있는 모든 세부 전공들을 가져옴
+                val majors = db.collection("collages").document(collegeDoc.id)
+                    .collection("majors").get().await()
+
+                // 4. 가져온 세부 전공들의 이름을 리스트에 추가
+                for (majorDoc in majors.documents) {
+                    majorDoc.getString("major_name")?.let { majorName ->
+                        allMajors.add(majorName)
+                    }
+                }
+            }
+
+            // 5. 완성된 전체 전공 리스트로 상태 업데이트
+            departments = allMajors.sorted() // 가나다순으로 정렬
+        } catch (e: Exception) {
+            Log.e("Firestore", "전공 목록을 불러오는 데 실패했습니다.", e)
+        }
+    }
+
+    // 입력된 텍스트가 포함된 전공만 필터링
     val filtered = remember(major) {
         if (major.isBlank()) departments
         else departments.filter { it.contains(major, ignoreCase = true) }
     }
-
-
 
     Scaffold(
         topBar = {
@@ -95,8 +125,8 @@ fun SignUpProfileScreen(
 
                 navigationIcon = {
                     IconButton(onClick = {
-                        // 뒤로가기 로직
-                        // navController?.popBackStack()
+                        // 뒤로가기
+                        navController?.popBackStack()
                     }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBackIosNew,
@@ -120,7 +150,42 @@ fun SignUpProfileScreen(
                 horizontalArrangement = Arrangement.End,
             ) {
                 Button(
-                    onClick = { /* 페이지 이동 로직 */ },
+                    onClick = {
+                        // 정보 저장
+                        authViewModel.updateNickname(finalNickname)
+                        authViewModel.updateMajor(major)
+
+                        // Firestore에 회원 정보 저장
+                        // 지금까지 받은 정보를 엔티티로 변환
+                        val user: UserEntity = UserEntity(
+                            userId = 0, // PK 관련 로직 고민 필요
+                            major = authViewModel.major,
+                            email = authViewModel.email,
+                            nickname = authViewModel.nickname,
+                            loginId = authViewModel.loginId,
+                            password = authViewModel.password,
+                            profileImageUrl = ""
+                        )
+
+                        // Firestore에 정보 저장
+                        Firebase.firestore.collection("users")
+                            .add(user)
+                            .addOnSuccessListener {
+                                Log.d("login", "회원 가입 성공")
+                            }
+                            .addOnFailureListener {
+                                Log.d("login", "회원 가입 실패")
+                            }
+
+                        // 로그인 페이지로 이동
+                        navController.navigate("login"){
+                            // 이전 페이지 방문 기록 삭제
+                            popUpTo(navController.graph.startDestinationId){
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    },
                     shape = RoundedCornerShape(28),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.tertiary,
@@ -178,9 +243,6 @@ fun SignUpProfileScreen(
                     ) {
                         Button(
                             onClick = {
-                                // 닉네임을 입력받지 않았다면 placeholder 값을 사용
-                                val finalNickname =
-                                    if (nickname.isBlank()) randomPlaceholder else nickname
                                 /* 닉네임 중복 확인 로직 */
                             },
                             shape = RoundedCornerShape(28),
