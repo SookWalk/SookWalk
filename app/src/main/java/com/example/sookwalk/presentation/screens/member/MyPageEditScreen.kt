@@ -46,6 +46,7 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -136,17 +137,42 @@ fun MyPageEditScreen(
     var nickname by remember { mutableStateOf("") }
     var isNicknameAvailable by remember { mutableStateOf<Boolean?>(null) }
     var isAvailableNicknameMsg by remember { mutableStateOf("") }
-    var hasCheckedNickname by remember { mutableStateOf(false) }
 
     var major by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
 
     var isChangedMajor by remember { mutableStateOf(false) }
 
+    var departments by remember { mutableStateOf<List<String>>(emptyList()) }
+// 화면이 처음 생성될 때 Firestore에서 모든 전공 목록을 가져옴
+    LaunchedEffect(Unit) {
+        val db = Firebase.firestore
+        val allMajors = mutableListOf<String>()
 
-    val departments = listOf(
-        "IP·콘텐츠전공", "IT공학전공", "K-POP산업경영전공", "게임콘텐츠디자인전공", "공공인재학전공", "과학저널리즘전공"
-    )
+        try {
+            // 1. 'collages' 컬렉션에 있는 모든 단과대학 문서들을 가져옴
+            val colleges = db.collection("collages").get().await()
+
+            // 2. 각 단과대학 문서에 대해 반복
+            for (collegeDoc in colleges.documents) {
+                // 3. 해당 단과대학의 'majors' 하위 컬렉션에 있는 모든 세부 전공들을 가져옴
+                val majors = db.collection("collages").document(collegeDoc.id)
+                    .collection("majors").get().await()
+
+                // 4. 가져온 세부 전공들의 이름을 리스트에 추가
+                for (majorDoc in majors.documents) {
+                    majorDoc.getString("major_name")?.let { majorName ->
+                        allMajors.add(majorName)
+                    }
+                }
+            }
+
+            // 5. 완성된 전체 전공 리스트로 상태 업데이트
+            departments = allMajors.sorted() // 가나다순으로 정렬
+        } catch (e: Exception) {
+            Log.e("Firestore", "전공 목록을 불러오는 데 실패했습니다.", e)
+        }
+    }
 
     val filtered = remember(major) {
         if (major.isBlank()) departments else departments.filter {
@@ -261,10 +287,10 @@ fun MyPageEditScreen(
                                     viewModel.isNicknameAvailable(nickname)
 
                                     if (viewModel.isAvailableNickname.value) {
-                                        isAvailableNicknameMsg = "사용 가능한 아이디입니다."
+                                        isAvailableNicknameMsg = "사용 가능한 닉네임입니다."
                                         isNicknameAvailable = true
                                     } else {
-                                        isAvailableNicknameMsg = "이미 존재하는 아이디입니다."
+                                        isAvailableNicknameMsg = "이미 존재하는 닉네임입니다."
                                     }
                                 },
                                 shape = RoundedCornerShape(28),
