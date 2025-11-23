@@ -44,9 +44,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.sookwalk.presentation.components.BottomNavBar
 import com.example.sookwalk.presentation.components.TopBar
+import com.example.sookwalk.presentation.viewmodel.MapViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -62,6 +64,10 @@ import kotlinx.coroutines.tasks.await
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
+    viewModel: MapViewModel,
+    navController: NavController,
+    onBack: () -> Unit,
+    onAlarmClick: () -> Unit,
     onMenuClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -260,9 +266,9 @@ fun MapScreen(
             ) {
                 TopBar(
                     screenName = "지도",
-                    onBack = {},
+                    onBack = onBack,
                     onMenuClick = onMenuClick,
-                    onAlarmClick = {}
+                    onAlarmClick = onAlarmClick
                 )
             }
         }

@@ -18,22 +18,35 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.sookwalk.presentation.components.BottomNavBar
 import com.example.sookwalk.presentation.components.TopBar
+import com.example.sookwalk.presentation.viewmodel.AuthViewModel
+import com.example.sookwalk.presentation.viewmodel.GoalViewModel
+import com.example.sookwalk.utils.goal.convertMillisToDateString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoalScreen(
-    onMenuClick: () -> Unit
+    viewModel: GoalViewModel,
+    navController: NavController,
+    onBack: () -> Unit,
+    onAlarmClick: () -> Unit,
+    onMenuClick: () -> Unit,
+    onAddGoalClick: (String) -> Unit
 ) {
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = System.currentTimeMillis() // 오늘 날짜 기본값
+    )
+
     Scaffold(
         topBar = {
             TopBar(
                 screenName = "목표",
-                onBack = {},
+                onBack = onBack,
                 onMenuClick = onMenuClick,
-                onAlarmClick = {}
+                onAlarmClick = onAlarmClick
             )
         },
         bottomBar = { BottomNavBar(navController = rememberNavController()) },
@@ -47,10 +60,18 @@ fun GoalScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
             // 1. M3 DatePicker를 사용한 캘린더 카드
-            CalendarCard()
+            CalendarCard(state = datePickerState)
             Spacer(modifier = Modifier.height(24.dp))
             // 2. M3 ListItem을 사용한 챌린지 카드
-            ChallengesCard()
+            ChallengesCard(
+                onAddClick = {
+                    // 선택된 날짜(Millis)를 가져와서 포맷팅
+                    val selectedDateMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+                    val formattedDate = convertMillisToDateString(selectedDateMillis)
+
+                    onAddGoalClick(formattedDate)
+                }
+            )
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
@@ -60,7 +81,9 @@ fun GoalScreen(
 // 캘린더 카드 (M3 DatePicker 사용)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarCard() {
+fun CalendarCard(
+    state: DatePickerState
+) {
     val datePickerState = rememberDatePickerState(
         // 초기 선택된 날짜 (Epoch Millis)
         initialSelectedDateMillis = 1755481200000L
@@ -74,7 +97,7 @@ fun CalendarCard() {
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         DatePicker(
-            state = datePickerState,
+            state = state,
             title = null,
             headline = null,
             showModeToggle = false, // 날짜/연도 선택 토글 숨김
@@ -100,7 +123,9 @@ fun CalendarCard() {
 
 // 챌린지 카드 (M3 ListItem 사용)
 @Composable
-fun ChallengesCard() {
+fun ChallengesCard(
+    onAddClick: () -> Unit
+) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -125,7 +150,7 @@ fun ChallengesCard() {
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Button(
-                    onClick = { /* 챌린지 추가 */ },
+                    onClick = onAddClick,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFB2D4BD),
                         contentColor = Color.White
@@ -183,5 +208,3 @@ fun ChallengeListItem(title: String, subtitle: String) {
         modifier = Modifier.padding(vertical = 4.dp)
     )
 }
-
-data class BottomNavItem(val label: String, val icon: ImageVector)

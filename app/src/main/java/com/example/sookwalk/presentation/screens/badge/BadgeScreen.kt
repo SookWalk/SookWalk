@@ -20,9 +20,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.sookwalk.presentation.components.BottomNavBar
 import com.example.sookwalk.presentation.components.TopBar
+import com.example.sookwalk.presentation.viewmodel.AuthViewModel
+import com.example.sookwalk.presentation.viewmodel.BadgeViewModel
 
 data class BadgeInfo(
     val title: String?,
@@ -33,6 +36,10 @@ data class BadgeInfo(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BadgeScreen(
+    viewModel: BadgeViewModel,
+    navController: NavController,
+    onBack: () -> Unit,
+    onAlarmClick: () -> Unit,
     onMenuClick: () -> Unit
 ) {
     // 샘플 데이터
@@ -52,8 +59,8 @@ fun BadgeScreen(
         topBar = {
             TopBar(
                 screenName = "뱃지",
-                onBack = {},
-                onAlarmClick = {},
+                onBack = onBack,
+                onAlarmClick = onAlarmClick,
                 onMenuClick = onMenuClick
             )
         },
