@@ -17,12 +17,16 @@ import com.example.sookwalk.navigation.NavGraph
 import com.example.sookwalk.presentation.viewmodel.ThemeViewModel
 import com.example.sookwalk.ui.theme.SookWalkTheme
 import com.example.sookwalk.utils.notification.NotificationHelper
+import com.google.android.gms.maps.MapsInitializer
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        MapsInitializer.initialize(applicationContext)
+
         enableEdgeToEdge()
         setContent {
             val themeVM: ThemeViewModel = hiltViewModel()

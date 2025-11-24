@@ -37,6 +37,7 @@ fun FavoritesBottomSheet(
     sheetState: SheetState,
     onDismiss: () -> Unit,
     onAddClick: () -> Unit,
+    onCategoryClick: () -> Unit
 ){
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -56,7 +57,10 @@ fun FavoritesBottomSheet(
                 .padding(16.dp)
         ){
             favorites.forEach { item ->
-                FavoriteRow(item)
+                FavoriteRow(
+                    item = item,
+                    onClick = onCategoryClick // [변경] 클릭 이벤트 전달
+                )
                 Spacer(modifier = Modifier.height(20.dp))
             }
 
@@ -122,19 +126,54 @@ fun FavoriteRow(item: FavoriteItem) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true)
 @Composable
-fun FavoritesBottomSheetPreview() {
-    SookWalkTheme {
-        val sheetState = rememberModalBottomSheetState(
-            skipPartiallyExpanded = true
-        )
+fun FavoriteRow(
+    item: FavoriteItem,
+    onClick: () -> Unit // [변경] 클릭 파라미터 추가
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() } // [변경] 클릭 가능하게 수정
+    ){
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .clip(CircleShape)
+                .background(item.iconColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Filled.Star,
+                contentDescription = item.title,
+                tint = Color.White
+            )
+        }
 
-        FavoritesBottomSheet(
-            sheetState = sheetState,
-            onDismiss = {},
-            onAddClick = {}
-        )
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column {
+            Text(
+                text = item.title,
+                fontSize = 18.sp,
+            )
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.LocationOn,
+                    contentDescription = "Distance",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = item.distance,
+                    fontSize = 14.sp,
+                    color = Color.DarkGray,
+                    modifier = Modifier.padding(start = 2.dp)
+
+                )
+            }
+        }
     }
 }

@@ -73,7 +73,7 @@ fun SignUpAccountScreen(
     var isVisible by remember { mutableStateOf(false) } // 비밀번호 가시성
 
     var email by remember { mutableStateOf("") }
-    var code by remember { mutableStateOf("") } // OTP 코드
+    var authCode by remember { mutableStateOf("") } // OTP 코드
     var isTimerRunning by remember { mutableStateOf(false) } // 타이머 동작 여부
     var timeLeft by remember { mutableStateOf(180) } // 남은 시간 (초 단위, 3분 = 180초)
     var isAuthencated by remember { mutableStateOf(false) } // 이메일 인증 여부
@@ -369,8 +369,6 @@ fun SignUpAccountScreen(
                             )
                         }
 
-                        // 이메일 입력 TextField
-                        var email by remember { mutableStateOf("") }
                         TextField(
                             value = email,
                             onValueChange = { email = it },
@@ -473,8 +471,6 @@ fun SignUpAccountScreen(
                             )
                         }
 
-                        // 인증 번호 입력 TextField
-                        var authCode by remember { mutableStateOf("") }
                         TextField(
                             value = authCode,
                             onValueChange = { authCode = it },
@@ -510,11 +506,12 @@ fun SignUpAccountScreen(
                                     val functions = Firebase.functions("asia-northeast3") // region 설정
                                     val verifyOtp = functions.getHttpsCallable("verifyOtp")
 
-                                    verifyOtp.call(hashMapOf("email" to email, "otp" to code))
+                                    verifyOtp.call(hashMapOf("email" to email, "otp" to authCode))
                                         .addOnSuccessListener { result ->
                                             Log.d("OTP", "인증 성공: ${result.data}")
                                             isAuthencated = true
                                             isAuthencatedMsg = "인증에 성공했습니다."
+                                            isTimerRunning = false
                                         }
                                         .addOnFailureListener { e ->
                                             Log.e("OTP", "인증 실패: ${e.message}")

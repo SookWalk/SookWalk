@@ -1,6 +1,9 @@
 package com.example.sookwalk.presentation.viewmodel
 
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
-class BadgeViewModel @Inject constructor() {
+@HiltViewModel
+class BadgeViewModel @Inject constructor(): ViewModel() {
 }
