@@ -62,8 +62,7 @@ class AuthRepository @Inject constructor(
         major: String,
         nickname: String
     ) {
-
-        val user: UserEntity = UserEntity(
+        val user = UserEntity(
             email = email,
             loginId = loginId,
             major = major,
@@ -71,25 +70,26 @@ class AuthRepository @Inject constructor(
             profileImageUrl = ""
         )
 
-        // 로컬에 회원 정보 저장
-        dao.insert(user)
+        try {
+            // 1. Firebase Auth 계정 생성 (await를 써서 다 될 때까지 기다림)
+            auth.createUserWithEmailAndPassword(email, password).await()
+            Log.d("SignUp", "Firebase Auth 계정 생성 성공")
 
-        // FirebaseAuth로 계정 생성
-        // FirebaseAuth에 저장할 땐 이메일 + 비밀번호로
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnSuccessListener{ Log.d("SignUp","가입 완료: ${it.user?.email}") }
-            .addOnFailureListener{ Log.d("SignUp", "가입 실패: ${it.message}") }
+            // 2. Firestore에 정보 저장 (계정 생성이 성공했을 때만 실행됨)
+            Firebase.firestore.collection("users")
+                .add(user)
+                .await() // 저장 완료될 때까지 대기
+            Log.d("SignUp", "Firestore 저장 성공")
 
-        // Firestore에 정보 저장
-        Firebase.firestore.collection("users")
-            // 로컬에 저장한 같은 정보를 저장
-            .add(user)
-            .addOnSuccessListener {
-                Log.d("login", "회원정보 저장 성공")
-            }
-            .addOnFailureListener {
-                Log.d("login", "회원정보 저장 실패")
-            }
+            // 3. 로컬 DB 저장 (마지막에 저장)
+            dao.insert(user)
+            Log.d("SignUp", "Room DB 저장 성공")
+
+        } catch (e: Exception) {
+            // 회원가입 실패 시 로그 출력
+            Log.e("SignUp", "회원가입 실패: ${e.message}")
+            throw e // 뷰모델로 에러를 던져서 UI에서 알림을 띄우게 할 수도 있음
+        }
     }
 
     // 아이디 중복 여부 확인
