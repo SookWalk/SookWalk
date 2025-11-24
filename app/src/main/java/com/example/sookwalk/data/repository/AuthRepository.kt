@@ -27,22 +27,23 @@ class AuthRepository @Inject constructor(
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
     suspend fun login(loginId: String, password: String): Boolean {
-        return try { val idInFirestore = Firebase.firestore.collection("users")
-            .whereEqualTo("loginId", loginId.trim()) // 공백 제거
-            .get()
-            .await()
+        return try {
+            val idInFirestore = Firebase.firestore.collection("users")
+                .whereEqualTo("loginId", loginId.trim()) // 공백 제거
+                .get()
+                .await()
 
-        // 아이디가 존재하는지 먼저 확인
-        if (idInFirestore.isEmpty) {
-            return false
-        } else {
-            val email = idInFirestore.documents.first().getString("email") ?: ""
-            // FirebaseAuth로 로그인 시도, 성공하면 user 객체 반환, 실패하면 예외 발생
-            auth.signInWithEmailAndPassword(email, password).await()
-            _isLoggedIn.value = true
-            true
-        }
-    } catch (e: Exception) {
+            // 아이디가 존재하는지 먼저 확인
+            if (idInFirestore.isEmpty) {
+                return false
+            } else {
+                val email = idInFirestore.documents.first().getString("email") ?: ""
+                // FirebaseAuth로 로그인 시도, 성공하면 user 객체 반환, 실패하면 예외 발생
+                auth.signInWithEmailAndPassword(email, password).await()
+                _isLoggedIn.value = true
+                true
+            }
+        } catch (e: Exception) {
             Log.e("LoginFailure", "로그인 실패: ${e.message}")
             false // 어떤 종류의 예외든 실패로 간주
         }
@@ -93,12 +94,20 @@ class AuthRepository @Inject constructor(
     }
 
     // 아이디 중복 여부 확인
-    suspend fun isLoginIdAvailable(loginId: String): Boolean {
-        val result = Firebase.firestore.collection("users")
-            .whereEqualTo("loginId", loginId.trim()) // 공백 제거
-            .get()
-            .await()
+    suspend fun isLoginIdAvailable(loginId: String): Boolean {        // try-catch 구문으로 네트워크 및 권한 오류로부터 앱을 보호
+        return try {
+            val result = Firebase.firestore.collection("users")
+                .whereEqualTo("loginId", loginId.trim())
+                .get()
+                .await()
 
-        return result.isEmpty // 비어있으면 (중복 X 아이디면) 사용 가능
+            // 문서를 찾지 못하면 true(사용 가능) 반환
+            result.isEmpty
+        } catch (e: Exception) {
+            // Firestore 접근에 실패하면 (네트워크, 권한 문제 등)
+            // 안전을 위해 '사용 불가(false)'로 처리하고 에러 로그를 남긴다.
+            Log.e("IdCheck", "아이디 중복 체크 실패: ${e.message}")
+            false
+        }
     }
 }
