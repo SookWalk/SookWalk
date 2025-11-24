@@ -82,6 +82,7 @@ fun MapScreen(
     // skipPartiallyExpanded = true를 하면 시트가 처음부터 완전히 펼쳐집니다.
     val placesSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    var showAddDialog by remember { mutableStateOf(false) }
 
     // 위치 권한 상태
     var hasFine by remember { mutableStateOf(false) }
@@ -200,7 +201,9 @@ fun MapScreen(
                 FavoritesBottomSheet(
                     sheetState = favoritesSheetState,
                     onDismiss = { showFavoritesSheet = false },
-                    onAddClick = { /* 추가 로직 */ },
+                    onAddClick = {
+                        showAddDialog = true
+                    },
                     onCategoryClick = {
                         showFavoritesSheet = false
                         showPlacesSheet = true
@@ -212,6 +215,15 @@ fun MapScreen(
                 PlacesBottomSheet(
                     sheetState = placesSheetState,
                     onDismissRequest = { showPlacesSheet = false }
+                )
+            }
+
+            if (showAddDialog) {
+                AddFavoriteDialog(
+                    onDismiss = { showAddDialog = false }, // 바깥 누르면 닫기
+                    onAdd = { name, colorLong ->
+                        showAddDialog = false
+                    }
                 )
             }
         }
