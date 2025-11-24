@@ -1,9 +1,11 @@
 package com.example.sookwalk.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -47,13 +49,19 @@ fun NavGraph(navController: NavHostController,modifier: Modifier = Modifier) {
     val badgeViewModel: BadgeViewModel = hiltViewModel()
     val mapViewModel: MapViewModel = hiltViewModel()
 
+    // 로그인 여부 체크
+    val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+
+    LaunchedEffect(Unit) {
+        authViewModel.checkLoginStatus()
+    }
 
     NavHost(navController = navController, startDestination = Routes.LOGIN) {
 
         ////// 첫 화면 //////
 
         composable(Routes.LOGIN) {
-             if (/* 로그인이 되어있을 경우 */) {
+             if (isLoggedIn) {
                  HomeScreen(goalViewModel, stepViewModel, navController,
                      onBack = { navController.popBackStack() },
                      onAlarmClick = {navController.navigate(Routes.NOTIFICATION)},

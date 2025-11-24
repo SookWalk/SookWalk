@@ -1,5 +1,6 @@
 package com.example.sookwalk.presentation.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -7,11 +8,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sookwalk.data.local.entity.user.UserEntity
 import com.example.sookwalk.data.repository.AuthRepository
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -53,16 +58,20 @@ class AuthViewModel @Inject constructor
         this.email = email
     }
 
-    // 현재 유저 정보 가져오기
-    val currentUser: StateFlow<UserEntity?>
-            = repository.currentUser.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000), // 5초간 구독이 없으면 중단
-        initialValue = null )// 초기값 설정
 
     // 로그인
 
-    // 로그인 가능 여부 저장
+    // 로그인 여부 검사
+    private val _isLoggedIn = MutableStateFlow(false)
+    val isLoggedIn = _isLoggedIn
+
+    fun checkLoginStatus() {
+        viewModelScope.launch {
+            _isLoggedIn.value = repository.isLoggedIn()
+        }
+    }
+
+    // 로그인
     var _isLoginSuccess = MutableStateFlow<Boolean>(false)
     val isLoginSuccess = _isLoginSuccess
     fun login(loginId: String, password: String){
@@ -74,15 +83,20 @@ class AuthViewModel @Inject constructor
 
 
     // 회원 가입
-    fun insertNewAccount(user: UserEntity){
+    fun insertNewAccount(email: String, loginId: String, password: String, nickname: String, major: String){
         viewModelScope.launch{
-            repository.insertNewAccount(user)
+            repository.insertNewAccount(
+                email = email,
+                password = password,
+                nickname = nickname,
+                major = major,
+                loginId = loginId
+            )
         }
     }
 
 
     // 아이디 중복 여부 확인
-
     // 닉네임 사용 가능 여부 저장
     var _isLoginIdAvailable = MutableStateFlow<Boolean>(true)
     val isLoginIdAvailable = _isLoginIdAvailable

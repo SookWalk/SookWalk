@@ -38,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,7 +53,9 @@ import com.example.sookwalk.data.local.entity.user.UserEntity
 import com.example.sookwalk.presentation.viewmodel.AuthViewModel
 import com.example.sookwalk.presentation.viewmodel.UserViewModel
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 
@@ -165,19 +168,17 @@ fun SignUpProfileScreen(
                             email = authViewModel.email,
                             nickname = authViewModel.nickname,
                             loginId = authViewModel.loginId,
-                            password = authViewModel.password,
                             profileImageUrl = ""
                         )
 
-                        // Firestore에 정보 저장
-                        Firebase.firestore.collection("users")
-                            .add(user)
-                            .addOnSuccessListener {
-                                Log.d("login", "회원 가입 성공")
-                            }
-                            .addOnFailureListener {
-                                Log.d("login", "회원 가입 실패")
-                            }
+                        // FirebaseAuth로 계정 생성
+                        // FirebaseAuth에 저장할 땐 이메일 + 비밀번호로
+                        authViewModel.insertNewAccount(
+                            authViewModel.email,
+                            authViewModel.loginId,
+                            authViewModel.password,
+                            finalNickname,
+                            major)
 
                         // 로그인 페이지로 이동
                         navController.navigate("login"){
@@ -196,7 +197,7 @@ fun SignUpProfileScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     modifier = Modifier.padding(8.dp)
                 ) {
-                    Text("다음", style = MaterialTheme.typography.displaySmall)
+                    Text("회원 가입", style = MaterialTheme.typography.displaySmall)
                 }
             }
         }
