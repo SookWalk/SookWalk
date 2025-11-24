@@ -44,9 +44,9 @@ data class PlacesData(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlacesBottomSheet(
+    sheetState: SheetState,
     onDismissRequest: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState()
 
     val PlacesList = listOf(
         PlacesData("털보네떡꼬치", "한식", "12km", "서울특별시 용산구 갈월동 93-60 1층"),
@@ -145,15 +145,5 @@ fun PlaceItemUI(data: PlacesData) {
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewOnlyBottomSheet() {
-    val showSheet = remember { mutableStateOf(true) }
-
-    if (showSheet.value) {
-        PlacesBottomSheet(onDismissRequest = { showSheet.value = false })
     }
 }

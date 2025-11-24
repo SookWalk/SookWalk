@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.sookwalk"
-        minSdk = 36
+        minSdk = 29
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -139,4 +139,7 @@ dependencies {
 
     // Coil
     implementation("io.coil-kt:coil-compose:2.6.0")
+
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
+    implementation("com.google.firebase:firebase-appcheck-debug")
 }
