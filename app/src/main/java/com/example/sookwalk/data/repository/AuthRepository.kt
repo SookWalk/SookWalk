@@ -51,9 +51,10 @@ class AuthRepository @Inject constructor(
         return false
     }
 
-    // 로그인 여부 확인
+    // 로그인 여부 확인 (익명 계정 제외)
     suspend fun isLoggedIn(): Boolean {
-        return auth.currentUser != null
+        val user = auth.currentUser
+        return user != null && !user.isAnonymous
     }
 
     // 회원 가입
