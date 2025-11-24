@@ -77,7 +77,7 @@ fun SignUpAccountScreen(
     var isTimerRunning by remember { mutableStateOf(false) } // 타이머 동작 여부
     var timeLeft by remember { mutableStateOf(180) } // 남은 시간 (초 단위, 3분 = 180초)
     var isAuthencated by remember { mutableStateOf(false) } // 이메일 인증 여부
-
+    var isAuthencatedMsg by remember { mutableStateOf("") }
     var moveNextEnabled by remember { mutableStateOf(false) } // 다음 페이지 이동
 
     // 모든 요건을 만족하면 다음 페이지로 이동한다
@@ -493,6 +493,14 @@ fun SignUpAccountScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
                         ) {
+                            Text(
+                                isAuthencatedMsg,
+                                color = if(isAuthencated) MaterialTheme.colorScheme.tertiary else Color.Red,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+
+                            Spacer(modifier = Modifier.width(4.dp))
+
                             Button(
                                 onClick = {
                                     val functions = Firebase.functions("asia-northeast3") // region 설정
@@ -502,11 +510,13 @@ fun SignUpAccountScreen(
                                         .addOnSuccessListener { result ->
                                             Log.d("OTP", "인증 성공: ${result.data}")
                                             isAuthencated = true
+                                            isAuthencatedMsg = "인증에 성공했습니다."
                                             isTimerRunning = false
                                         }
                                         .addOnFailureListener { e ->
                                             Log.e("OTP", "인증 실패: ${e.message}")
                                             isAuthencated = false
+                                            isAuthencatedMsg = "인증에 실패했습니다."
                                         }
                                 },
                                 shape = RoundedCornerShape(28),
