@@ -48,7 +48,11 @@ class AuthRepository @Inject constructor(
             .addOnFailureListener {
                 _isLoggedIn.value = false
             }
-        return false
+        if(_isLoggedIn.value){
+            return true
+        } else {
+            return false
+        }
     }
 
     // 로그인 여부 확인 (익명 계정 제외)
