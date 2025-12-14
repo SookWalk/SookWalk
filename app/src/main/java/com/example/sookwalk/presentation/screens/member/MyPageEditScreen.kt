@@ -137,6 +137,11 @@ fun MyPageEditScreen(
     val isNicknameAvailable by viewModel.isNicknameAvailable.collectAsState()
     var isAvailableNicknameMsg by remember { mutableStateOf("") }
 
+    LaunchedEffect(Unit) {
+        // 화면을 처음 시작할 때 닉네임 사용 가능 여부 초기화
+        viewModel.resetNicknameCheckState()
+    }
+
     // isNicknameAvailable 상태가 변경될 때마다 메시지를 업데이트
     LaunchedEffect(isNicknameAvailable) {
         when (isNicknameAvailable) {
@@ -152,6 +157,7 @@ fun MyPageEditScreen(
     var isChangedMajor by remember { mutableStateOf(false) }
 
     var departments by remember { mutableStateOf<List<String>>(emptyList()) }
+
     // 화면이 처음 생성될 때 Firestore에서 모든 전공 목록을 가져옴
     LaunchedEffect(Unit) {
         val db = Firebase.firestore

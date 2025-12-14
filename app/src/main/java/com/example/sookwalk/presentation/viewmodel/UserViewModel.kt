@@ -19,7 +19,6 @@ class UserViewModel @Inject constructor(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-
     val currentUser: StateFlow<UserEntity?>
             = userRepository.currentUser.stateIn(
         scope = viewModelScope,
@@ -35,6 +34,11 @@ class UserViewModel @Inject constructor(
             val available = userRepository.isNicknameAvailable(nickname)
             _isNicknameAvailable.value = available
         }
+    }
+
+    // 닉네임 사용 가능 여부 초기화
+    fun resetNicknameCheckState() {
+        _isNicknameAvailable.value = null
     }
 
     // 닉네임, 학과 변경

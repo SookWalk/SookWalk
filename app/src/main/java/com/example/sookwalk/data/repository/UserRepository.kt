@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.sookwalk.data.local.dao.UserDao
 import com.example.sookwalk.data.local.entity.user.UserEntity
 import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -17,6 +18,9 @@ class UserRepository @Inject constructor(
 
     // 현재 사용중인 유저 정보 가져오기
     val currentUser: Flow<UserEntity?> = userDao.getCurrentUser()
+
+    // Firebase에서 현재 유저의 uid를 가져온다
+    val uid = Firebase.auth.currentUser?.uid
 
     // 닉네임 중복 여부 확인
     suspend fun isNicknameAvailable(nickname: String): Boolean {
@@ -36,12 +40,38 @@ class UserRepository @Inject constructor(
 
     // 닉네임, 학과 변경
     suspend fun updateNicknameAndMajor(newNickname: String, newMajor: String) {
+
         userDao.updateNicknameAndMajor(newNickname, newMajor)
+
+        // 기존 닉네임
+        val oldNickname = db.collection("users").document(uid?:"")
+            .get()
+            .await()
+            .getString("nickname")
+
+        // 기존 닉네임 삭제
+        db.collection("nicknames")
+            .document("$oldNickname")
+            .delete()
+
+        // 새로운 닉네임 추가
+        db.collection("nicknames").document(newNickname)
+            .set(mapOf("nickname" to newNickname))
+
+        db.collection("users").document(uid?:"").update(mapOf(
+            "nickname" to newNickname,
+            "major" to newMajor )
+        ).await()
     }
 
 
     suspend fun updateProfileImageUrl(newProfileImageUrl: String) {
+
         userDao.updateProfileImageUrl(newProfileImageUrl)
+
+        db.collection("users").document(uid?:"").update(mapOf(
+            "profileImageUrl" to newProfileImageUrl)
+        ).await()
     }
 
 }
