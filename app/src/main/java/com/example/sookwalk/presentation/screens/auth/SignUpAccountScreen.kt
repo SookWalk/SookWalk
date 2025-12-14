@@ -90,17 +90,20 @@ fun SignUpAccountScreen(
     var isVisible by remember { mutableStateOf(false) } // 비밀번호 가시성
 
     var email by remember { mutableStateOf("") }
+    var isEmailAvailable by remember { mutableStateOf(false) } // 숙명 구글 계정 여부
     var authCode by remember { mutableStateOf("") } // OTP 코드
+
     var isTimerRunning by remember { mutableStateOf(false) } // 타이머 동작 여부
     var timeLeft by remember { mutableStateOf(180) } // 남은 시간 (초 단위, 3분 = 180초)
     var isAuthencated by remember { mutableStateOf(false) } // 이메일 인증 여부
     var isAuthencatedMsg by remember { mutableStateOf("") }
+
     var moveNextEnabled by remember { mutableStateOf(false) } // 다음 페이지 이동
 
     // 모든 요건을 만족하면 다음 페이지로 이동한다
-    //if (isLoginIdAvailable && isAuthencated && password == confirmPassword) {
+    // if (isLoginIdAvailable && isAuthencated && password == confirmPassword) {
         moveNextEnabled = true
-    //}
+    // }
 
 
     // isTimerRunning이 true가 되면 해당 블록이 실행
@@ -382,7 +385,10 @@ fun SignUpAccountScreen(
 
                         TextField(
                             value = email,
-                            onValueChange = { email = it },
+                            onValueChange = {
+                                email = it
+                                isEmailAvailable = it.endsWith("@sookmyung.ac.kr")
+                                            },
                             singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth(),
@@ -399,6 +405,15 @@ fun SignUpAccountScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
                         ) {
+                            if(!isEmailAvailable){
+                                Text(
+                                    text = "숙명 구글 계정만 가입 가능합니다.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.padding(4.dp)
+                                )
+                            }
+
                             // --- 타이머 표시 UI ---
                             if (isTimerRunning) {
                                 // 분과 초를 계산
@@ -452,6 +467,8 @@ fun SignUpAccountScreen(
                                     isTimerRunning = true // 타이머 시작
 
                                 },
+                                // 숙명 구글 계정이 입력된 경우에만 인증 번호 전송 가능
+                                enabled = isEmailAvailable,
                                 shape = RoundedCornerShape(28),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.tertiary,
