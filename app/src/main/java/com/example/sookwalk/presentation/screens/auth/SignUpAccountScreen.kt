@@ -35,6 +35,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,8 +66,24 @@ fun SignUpAccountScreen(
 ) {
 
     var loginId by remember { mutableStateOf("") }
-    var isAvailableId by remember { mutableStateOf(false) } // 아이디 사용 가능 여부
+    val isLoginIdAvailable by viewModel.isLoginIdAvailable.collectAsState() // 아이디 사용 가능 여부
     var isAvailableIdMsg by remember { mutableStateOf("") }
+
+
+    // isLoginIdAvailable 상태가 변경될 때마다 메시지를 업데이트
+    LaunchedEffect(isLoginIdAvailable) {
+        when (isLoginIdAvailable) {
+            true -> {
+                isAvailableIdMsg = "사용 가능한 아이디입니다."
+            }
+            false -> {
+                isAvailableIdMsg = "이미 존재하는 아이디입니다."
+            }
+            null -> {
+                isAvailableIdMsg = "" // 초기 상태 또는 확인 전
+            }
+        }
+    }
 
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") } // 비밀번호 확인
@@ -81,9 +98,10 @@ fun SignUpAccountScreen(
     var moveNextEnabled by remember { mutableStateOf(false) } // 다음 페이지 이동
 
     // 모든 요건을 만족하면 다음 페이지로 이동한다
-    if (isAvailableId && isAuthencated && password == confirmPassword) {
+    //if (isLoginIdAvailable && isAuthencated && password == confirmPassword) {
         moveNextEnabled = true
-    }
+    //}
+
 
     // isTimerRunning이 true가 되면 해당 블록이 실행
     if (isTimerRunning) {
@@ -211,13 +229,6 @@ fun SignUpAccountScreen(
                             Button(
                                 onClick = {
                                     viewModel.isLoginIdAvailable(loginId)
-
-                                    if (viewModel.isLoginIdAvailable.value) {
-                                        isAvailableIdMsg = "사용 가능한 아이디입니다."
-                                        isAvailableId = true
-                                    } else {
-                                        isAvailableIdMsg = "이미 존재하는 아이디입니다."
-                                    }
                                 },
                                 shape = RoundedCornerShape(28),
                                 colors = ButtonDefaults.buttonColors(

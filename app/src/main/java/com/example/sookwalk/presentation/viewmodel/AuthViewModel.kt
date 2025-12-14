@@ -22,39 +22,38 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class AuthViewModel @Inject constructor
-    (private val repository: AuthRepository): ViewModel()
-{
-        // 화면 간 이동 시에도 저장되어야하는 정보
-        var loginId by mutableStateOf("")
-            private set
-        var password by mutableStateOf("")
-            private set
-        var nickname by mutableStateOf("")
-            private set
-        var major by mutableStateOf("")
-            private set
-        var email by mutableStateOf("")
+    (private val repository: AuthRepository): ViewModel() {
+    // 화면 간 이동 시에도 저장되어야하는 정보
+    var loginId by mutableStateOf("")
+        private set
+    var password by mutableStateOf("")
+        private set
+    var nickname by mutableStateOf("")
+        private set
+    var major by mutableStateOf("")
+        private set
+    var email by mutableStateOf("")
         private set
 
 
     // 각 정보에 대한 세터
-    fun updateLoginId(loginId: String){
+    fun updateLoginId(loginId: String) {
         this.loginId = loginId
     }
 
-    fun updatePassword(password: String){
+    fun updatePassword(password: String) {
         this.password = password
     }
 
-    fun updateNickname(nickname: String){
+    fun updateNickname(nickname: String) {
         this.nickname = nickname
     }
 
-    fun updateMajor(major: String){
+    fun updateMajor(major: String) {
         this.major = major
     }
 
-    fun updateEmail(eamil: String){
+    fun updateEmail(eamil: String) {
         this.email = email
     }
 
@@ -73,18 +72,24 @@ class AuthViewModel @Inject constructor
 
     // 로그인
     var _isLoginSuccess = MutableStateFlow<Boolean>(false)
-    val isLoginSuccess = _isLoginSuccess
-    fun login(loginId: String, password: String){
+    val isLoginSuccess = _isLoginSuccess.asStateFlow()
+    fun login(loginId: String, password: String) {
         viewModelScope.launch {
-            var _isLoginSuccess = repository.login(loginId, password)
-            isLoginSuccess.value = _isLoginSuccess
+            var success = repository.login(loginId, password)
+            _isLoginSuccess.value = success
         }
     }
 
 
     // 회원 가입
-    fun insertNewAccount(email: String, loginId: String, password: String, nickname: String, major: String){
-        viewModelScope.launch{
+    fun insertNewAccount(
+        email: String,
+        loginId: String,
+        password: String,
+        nickname: String,
+        major: String
+    ) {
+        viewModelScope.launch {
             repository.insertNewAccount(
                 email = email,
                 password = password,
@@ -97,14 +102,21 @@ class AuthViewModel @Inject constructor
 
 
     // 아이디 중복 여부 확인
-    // 닉네임 사용 가능 여부 저장
-    var _isLoginIdAvailable = MutableStateFlow<Boolean>(true)
-    val isLoginIdAvailable = _isLoginIdAvailable
+    // 아이디 사용 가능 여부 저장
+    var _isLoginIdAvailable = MutableStateFlow<Boolean?>(null)
+    val isLoginIdAvailable = _isLoginIdAvailable.asStateFlow()
 
-    fun isLoginIdAvailable(loginId: String){
+    fun isLoginIdAvailable(loginId: String) {
         viewModelScope.launch {
-            val available = repository.isLoginIdAvailable(loginId)
-            _isLoginIdAvailable.value = available
+            try {
+                val available = repository.isLoginIdAvailable(loginId)
+                _isLoginIdAvailable.value = available
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "아이디 중복 확인 실패", e)
+                // 예외 발생 시, 사용 불가능한 것으로 처리하거나
+                // 별도의 에러 상태로 관리
+                _isLoginIdAvailable.value = false
+            }
         }
     }
 }
