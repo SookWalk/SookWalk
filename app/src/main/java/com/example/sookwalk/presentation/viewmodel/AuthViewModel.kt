@@ -112,4 +112,29 @@ class AuthViewModel @Inject constructor
             }
         }
     }
+
+    // 이메일 중복 여부 확인
+    // 이메일 사용 가능 여부 저장
+    var _isEmailAvailable = MutableStateFlow<Boolean?>(null)
+    val isEmailAvailable = _isEmailAvailable.asStateFlow()
+
+    fun isEmailAvailable(email: String) {
+        viewModelScope.launch {
+            try {
+                val available = repository.isEmailAvailable(email)
+                _isEmailAvailable.value = available
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "이메일 중복 확인 실패", e)
+                // 예외 발생 시, 사용 불가능한 것으로 처리하거나
+                // 별도의 에러 상태로 관리
+                _isEmailAvailable.value = false
+            }
+        }
+    }
+
+    // 이메일 사용가능 여부 리셋
+    fun resetEmailAvailable() {
+        _isEmailAvailable.value = null
+    }
+
 }

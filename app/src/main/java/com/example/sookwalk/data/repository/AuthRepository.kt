@@ -112,6 +112,15 @@ class AuthRepository @Inject constructor(
                         )
                     )
 
+                // 이메일만 있는 컬렉션에 이메일 저장
+                db.collection("emails").document(email)
+                    .set(
+                        hashMapOf(
+                            "email" to email
+                        )
+                    )
+
+
                 // 로컬 DB에 저장
                 // Firestore까지 성공해야 로컬에도 저장
                 dao.insert(user)
@@ -142,6 +151,24 @@ class AuthRepository @Inject constructor(
             !result.exists() // 비어있으면 (중복 X 아이디면) 사용 가능
         }catch(e: Exception){
             Log.e("loginId", "아이디 중복 확인 실패", e)
+            throw e
+        }
+    }
+
+
+    // 이메일 중복 여부 확인
+    suspend fun isEmailAvailable(email: String): Boolean {
+        return try {
+            Log.d("중복확인", "이메일 중복 확인 시도: '$email'")
+            val result = db.collection("emails")
+                .document(email.trim()) // 문서 이름으로 비교
+                //.whereEqualTo("loginId", loginId.trim()) // 공백 제거
+                .get()
+                .await()
+            Log.d("중복확인", "이메일 중복 확인 시도2: '$email'")
+            !result.exists() // 비어있으면 (중복 X 아이디면) 사용 가능
+        }catch(e: Exception){
+            Log.e("email", "이메일 중복 확인 실패", e)
             throw e
         }
     }

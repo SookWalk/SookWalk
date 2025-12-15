@@ -70,7 +70,6 @@ fun SignUpAccountScreen(
     val isLoginIdAvailable by viewModel.isLoginIdAvailable.collectAsState() // 아이디 사용 가능 여부
     var isAvailableIdMsg by remember { mutableStateOf("") }
 
-
     // isLoginIdAvailable 상태가 변경될 때마다 메시지를 업데이트
     LaunchedEffect(isLoginIdAvailable) {
         when (isLoginIdAvailable) {
@@ -95,9 +94,20 @@ fun SignUpAccountScreen(
     }
 
     var email by remember { mutableStateOf("") }
-    var isEmailAvailable by remember { mutableStateOf(false) } // 숙명 구글 계정 여부
-    var authCode by remember { mutableStateOf("") } // OTP 코드
+    var isSookmyungEmail by remember { mutableStateOf(false) } // 숙명 구글 계정 여부
+    val isEmailAvailable by viewModel.isEmailAvailable.collectAsState() // 이메일 중복 여부
+    var isEmailAvailableMsg by remember { mutableStateOf("")}
 
+    // isDuplicatedEmail 상태가 변경될 때마다 메시지를 업데이트
+    LaunchedEffect(isEmailAvailable) {
+        when (isEmailAvailable) {
+            true -> isEmailAvailableMsg = "사용 가능한 이메일입니다."
+            false -> isEmailAvailableMsg = "이미 존재하는 이메일입니다."
+            null -> isEmailAvailableMsg = "" // 초기 상태 또는 확인 전
+        }
+    }
+
+    var authCode by remember { mutableStateOf("") } // OTP 코드
     var isTimerRunning by remember { mutableStateOf(false) } // 타이머 동작 여부
     var timeLeft by remember { mutableStateOf(180) } // 남은 시간 (초 단위, 3분 = 180초)
     var isAuthencated by remember { mutableStateOf(false) } // 이메일 인증 여부
@@ -386,9 +396,15 @@ fun SignUpAccountScreen(
 
                         TextField(
                             value = email,
-                            onValueChange = {
-                                email = it
-                                isEmailAvailable = it.endsWith("@sookmyung.ac.kr")
+                            onValueChange = { newEmail ->
+
+                                // 🚀 핵심 수정 부분: 현재 값과 새로운 입력 값이 다를 경우 상태를 리셋
+                                if (email != newEmail) {
+                                    // 이전에 '이미 존재하는 이메일'이라고 떴던 메시지를 지우기 위해 상태를 null로 리셋
+                                    viewModel.resetEmailAvailable()
+                                }
+                                email = newEmail
+                                isSookmyungEmail = newEmail.endsWith("@sookmyung.ac.kr")
                                             },
                             singleLine = true,
                             modifier = Modifier
@@ -406,11 +422,20 @@ fun SignUpAccountScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
                         ) {
-                            if(!isEmailAvailable){
+                            if(!isSookmyungEmail){
                                 Text(
                                     text = "숙명 구글 계정만 가입 가능합니다.",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.padding(4.dp)
+                                )
+                            } else{
+                                // 이메일 중복 여부 검사 코드
+                                Text(
+                                    text = isEmailAvailableMsg,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if(isEmailAvailable == true)
+                                        MaterialTheme.colorScheme.tertiary else Color.Red,
                                     modifier = Modifier.padding(4.dp)
                                 )
                             }
@@ -433,43 +458,53 @@ fun SignUpAccountScreen(
                             Button(
 
                                 onClick = {
-                                    Firebase.auth.signInAnonymously()
-                                        .addOnCompleteListener { task ->
-                                            if (task.isSuccessful) {
-                                                Log.d("Auth", "익명 로그인 성공. OTP 전송을 시작합니다.")
-                                                val functions = Firebase.functions("asia-northeast3") // region 설정
-                                                val sendOtp = functions.getHttpsCallable("sendOtp")
-                                                val user = Firebase.auth.currentUser
+                                    // 이미 해당 이메일로 계정이 있는 경우
+                                    viewModel.isEmailAvailable(email)
 
-                                                if (user != null) {
-                                                    sendOtp.call(hashMapOf("email" to email))
-                                                        .addOnSuccessListener { result ->
+                                    if (isEmailAvailable == true) {
 
-                                                            Log.d(
-                                                                "OTP",
-                                                                "OTP 전송 성공: ${result.data}"
-                                                            )
+                                        Firebase.auth.signInAnonymously()
+                                            .addOnCompleteListener { task ->
+                                                if (task.isSuccessful) {
+                                                    Log.d("Auth", "익명 로그인 성공. OTP 전송을 시작합니다.")
+                                                    val functions =
+                                                        Firebase.functions("asia-northeast3") // region 설정
+                                                    val sendOtp =
+                                                        functions.getHttpsCallable("sendOtp")
+                                                    val user = Firebase.auth.currentUser
 
-                                                        }
-                                                        .addOnFailureListener { e ->
-                                                            Log.e("OTP",
-                                                                "OTP 전송 실패: ${e.message}")
-                                                        }
+                                                    if (user != null) {
+                                                        sendOtp.call(hashMapOf("email" to email))
+                                                            .addOnSuccessListener { result ->
+
+                                                                Log.d(
+                                                                    "OTP",
+                                                                    "OTP 전송 성공: ${result.data}"
+                                                                )
+
+                                                            }
+                                                            .addOnFailureListener { e ->
+                                                                Log.e(
+                                                                    "OTP",
+                                                                    "OTP 전송 실패: ${e.message}"
+                                                                )
+                                                            }
+                                                    } else {
+                                                        Log.e("Auth", "익명 로그인 후 user가 null입니다.")
+                                                    }
                                                 } else {
-                                                    Log.e("Auth", "익명 로그인 후 user가 null입니다.")
+                                                    Log.e("Auth", "로그인 실패: ${task.exception}")
+
                                                 }
-                                            } else {
-                                                Log.e("Auth", "로그인 실패: ${task.exception}")
-
                                             }
-                                        }
 
-                                    timeLeft = 180 // 타이머를 3분으로 초기화
-                                    isTimerRunning = true // 타이머 시작
+                                        timeLeft = 180 // 타이머를 3분으로 초기화
+                                        isTimerRunning = true // 타이머 시작
 
+                                    }
                                 },
-                                // 숙명 구글 계정이 입력된 경우에만 인증 번호 전송 가능
-                                enabled = isEmailAvailable,
+                                // 숙명 구글 계정이 입력된 경우
+                                enabled = isSookmyungEmail,
                                 shape = RoundedCornerShape(28),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.tertiary,
@@ -480,7 +515,11 @@ fun SignUpAccountScreen(
                                     vertical = 8.dp
                                 )
                             ) {
-                                Text("인증 번호 전송", style = MaterialTheme.typography.displaySmall)
+                                if(isEmailAvailable != true)
+                                    Text("중복 확인", style = MaterialTheme.typography.displaySmall)
+                                else {
+                                    Text("인증번호 전송", style = MaterialTheme.typography.displaySmall)
+                                }
                             }
                         }
                     }
