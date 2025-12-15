@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.sookwalk.data.local.dao.UserDao
 import com.example.sookwalk.data.local.entity.user.UserEntity
 import com.google.firebase.Firebase
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 import jakarta.inject.Inject
@@ -71,11 +72,20 @@ class AuthRepository @Inject constructor(
         // FirebaseAuth로 계정 생성
         // FirebaseAuth에 저장할 땐 이메일 + 비밀번호로
         try {
+            val currentUser = auth.currentUser
+
+            if (currentUser == null || !currentUser.isAnonymous) {
+                // 익명 계정이 없거나 이미 정규 계정이면 에러 처리
+                throw IllegalStateException("회원가입은 익명 로그인 상태에서만 진행 가능합니다.")
+            }
+
+            val credential = EmailAuthProvider.getCredential(email, password)
             // 1. FirebaseAuth로 계정 생성하고 작업이 끝날 때까지 기다림
-            val authResult = auth.createUserWithEmailAndPassword(email, password).await()
+            val authResult = currentUser.linkWithCredential(credential).await()
             Log.d("SignUp", "FirebaseAuth 계정 생성 성공: ${authResult.user?.email}")
 
-            val uid = authResult.user?.uid
+            // 기존 익명 UID 그대로 사용
+            val uid = authResult.user!!.uid
 
             // 2. 계정 생성이 성공하면, Firestore에 정보 저장
 
