@@ -47,6 +47,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.sookwalk.R
 import com.example.sookwalk.data.local.entity.user.UserEntity
+import com.example.sookwalk.navigation.Routes
 import com.example.sookwalk.presentation.components.TopBar
 import com.example.sookwalk.presentation.viewmodel.UserViewModel
 import com.google.firebase.Firebase
@@ -142,7 +143,7 @@ fun MyPageScreen(
                 // 프로필 수정 버튼
                 item {
                     Button(
-                        onClick = { navController.navigate("myPageEdit") },
+                        onClick = { navController.navigate(Routes.MYPAGE_EDIT) },
                         shape = RoundedCornerShape(28),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.tertiary,
