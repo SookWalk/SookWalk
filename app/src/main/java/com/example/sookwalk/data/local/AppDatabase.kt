@@ -29,7 +29,7 @@ import com.example.sookwalk.data.local.entity.user.UserEntity
         SavedPlaceEntity::class,
         SearchHistoryEntity::class
     ],
-    version = 1, exportSchema = false)
+    version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     /* Dao 접근 함수 */
