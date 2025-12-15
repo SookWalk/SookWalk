@@ -30,4 +30,4 @@ data class GoalEntity(
 
     @ColumnInfo(name = "isDone")
     val isDone: Boolean = false,
-    )
+)
