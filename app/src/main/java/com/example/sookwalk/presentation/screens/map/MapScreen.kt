@@ -146,7 +146,7 @@ fun MapScreen(
     ) }
 
     Scaffold(
-        bottomBar = { BottomNavBar(navController = rememberNavController()) },
+        bottomBar = { BottomNavBar(navController = navController) },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         Box(Modifier.fillMaxSize()) {
