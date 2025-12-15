@@ -19,6 +19,7 @@ import com.example.sookwalk.presentation.screens.badge.BadgeScreen
 import com.example.sookwalk.presentation.screens.goal.AddGoalScreen
 import com.example.sookwalk.presentation.screens.goal.GoalScreen
 import com.example.sookwalk.presentation.screens.home.AlarmScreen
+import com.example.sookwalk.presentation.screens.home.HomeScreen
 // import com.example.sookwalk.presentation.screens.home.HomeScreen
 import com.example.sookwalk.presentation.screens.home.RankingScreen
 import com.example.sookwalk.presentation.screens.map.MapScreen
@@ -34,7 +35,6 @@ import com.example.sookwalk.presentation.viewmodel.RankingViewModel
 import com.example.sookwalk.presentation.viewmodel.SettingsViewModel
 import com.example.sookwalk.presentation.viewmodel.StepViewModel
 import com.example.sookwalk.presentation.viewmodel.UserViewModel
-import com.example.sookwalk.test.Test
 
 @Composable
 fun NavGraph(navController: NavHostController,modifier: Modifier = Modifier) {
@@ -117,7 +117,6 @@ fun NavGraph(navController: NavHostController,modifier: Modifier = Modifier) {
         ////// BottomNavBar에서 쓰이는 경로 //////
         ////// 메인 홈에서 특정 버튼 선택 시 쓰이는 경로 /////
 
-        /*
         // 메인 홈
         composable(Routes.HOME) {
             HomeScreen(
@@ -128,8 +127,6 @@ fun NavGraph(navController: NavHostController,modifier: Modifier = Modifier) {
                 onRankingBtnClick = {navController.navigate(Routes.RANK)}
             )
         }
-
-         */
 
         // 목표
         composable(Routes.GOALS) {

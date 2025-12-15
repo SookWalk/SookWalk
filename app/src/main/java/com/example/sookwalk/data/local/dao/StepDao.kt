@@ -5,9 +5,13 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.sookwalk.data.local.entity.steps.DailyStepEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface StepDao {
+
+    @Query("SELECT steps FROM steps WHERE date = :date LIMIT 1")
+    fun getStepsFlow(date: String): Flow<Int?>
 
     @Query("SELECT steps FROM steps WHERE date = :date LIMIT 1")
     suspend fun getSteps(date: String): Int?

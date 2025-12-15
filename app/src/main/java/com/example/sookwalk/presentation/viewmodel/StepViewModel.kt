@@ -6,7 +6,9 @@ import com.example.sookwalk.data.repository.StepRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -16,7 +18,8 @@ class StepViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _todaySteps = MutableStateFlow(0)
-    val todaySteps: StateFlow<Int> = _todaySteps
+    val todaySteps: StateFlow<Int> = repo.getStepsFlow(LocalDate.now().toString())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     private val _totalSteps = MutableStateFlow(0)
     val totalSteps: StateFlow<Int> = _totalSteps

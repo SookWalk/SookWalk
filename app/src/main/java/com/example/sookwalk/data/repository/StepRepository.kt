@@ -10,6 +10,8 @@ import com.google.firebase.firestore.SetOptions
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 
 @Singleton
@@ -20,6 +22,10 @@ class StepRepository @Inject constructor(
 
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+
+    fun getStepsFlow(date: String): Flow<Int> {
+        return stepDao.getStepsFlow(date).map { it ?: 0 }
+    }
 
     // Room
     suspend fun getStepsOfDate(date: String): Int {
