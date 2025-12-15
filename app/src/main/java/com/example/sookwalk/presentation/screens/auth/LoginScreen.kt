@@ -24,6 +24,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -33,6 +37,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,7 +87,43 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isVisible by remember { mutableStateOf(false) }
 
-    Scaffold { padding ->
+    // 스낵바
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val signupSuccess =
+        navController.currentBackStackEntry
+            ?.savedStateHandle
+            ?.get<Boolean>("signupSuccess")
+
+
+    LaunchedEffect(signupSuccess) {
+        if (signupSuccess == true) {
+            snackbarHostState.showSnackbar(
+                message = "회원가입이 완료되었습니다",
+                duration = SnackbarDuration.Short
+            )
+
+            navController.currentBackStackEntry
+                ?.savedStateHandle
+                ?.remove<Boolean>("signupSuccess")
+        }
+    }
+
+
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState
+            ) { data ->
+                Snackbar(
+                    containerColor = Color.Black.copy(alpha = 0.8f),
+                    contentColor = Color.White,
+                    snackbarData = data
+                )
+            }
+
+        }
+    ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()

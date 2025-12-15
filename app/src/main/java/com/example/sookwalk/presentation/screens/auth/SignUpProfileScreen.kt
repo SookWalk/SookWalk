@@ -156,13 +156,9 @@ fun SignUpProfileScreen(
                         major = major
                     )
 
-                    navController.navigate(Routes.LOGIN){
-                    // 이전 페이지 방문 기록 삭제
-                    popUpTo(navController.graph.startDestinationId){
-                        inclusive = true
-                    }
-                    launchSingleTop = true
-                    }
+                    // 스낵바
+                    navController.getBackStackEntry(Routes.LOGIN).savedStateHandle["signupSuccess"] = true
+                    navController.popBackStack(Routes.LOGIN, inclusive = false)
                 },
                 true
             )
