@@ -1,8 +1,10 @@
 package com.example.sookwalk.presentation.screens.badge
 
+import android.R.attr.onClick
 import com.example.sookwalk.R
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +13,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.sookwalk.presentation.components.BottomNavBar
@@ -42,6 +49,58 @@ fun BadgeScreen(
     onAlarmClick: () -> Unit,
     onMenuClick: () -> Unit
 ) {
+    // 팝업의 열림/닫힘 제어
+    var selectedBadge by remember { mutableStateOf<BadgeInfo?>(null) }
+
+    if (selectedBadge != null) {
+        Dialog(onDismissRequest = { selectedBadge = null }) {
+            Box(
+                modifier = Modifier
+                    .size(260.dp) // 정사각형
+                    .background(Color.White, RoundedCornerShape(16.dp))
+                    .padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    selectedBadge?.imageRes?.let {
+                        Image(
+                            painter = painterResource(id = it),
+                            contentDescription = null,
+                            modifier = Modifier.size(100.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = selectedBadge?.title ?: "",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = selectedBadge?.level ?: "",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "해당 뱃지에 대한 설명을 여기에 표시하세요.",
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
+
     // 샘플 데이터
     val badges = listOf(
         BadgeInfo("워킹 마스터", "레벨 1/10", R.drawable.character_01),
@@ -106,14 +165,22 @@ fun BadgeScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             // 하단 뱃지들 영역
-            GreenGridContainer(badges = badges)
+            GreenGridContainer(
+                badges = badges,
+                onBadgeClick = { badge ->
+                    selectedBadge = badge
+                }
+            )
         }
     }
 }
 
 // 하단 그리드 컨테이너
 @Composable
-fun GreenGridContainer(badges: List<BadgeInfo>) {
+fun GreenGridContainer(
+    badges: List<BadgeInfo>,
+    onBadgeClick: (BadgeInfo) -> Unit
+    ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -133,7 +200,10 @@ fun GreenGridContainer(badges: List<BadgeInfo>) {
                 ) {
                     for (badge in rowBadges) {
                         Box(modifier = Modifier.weight(1f)) {
-                            SmallBadgeCard(badge)
+                            SmallBadgeCard(
+                                badge = badge,
+                                onClick = { onBadgeClick(badge) }
+                            )
                         }
                     }
                     // 갯수가 모자란 행의 빈 공간 채우기
@@ -219,7 +289,10 @@ fun BestBadgeCard() {
 }
 
 @Composable
-fun SmallBadgeCard(badge: BadgeInfo) {
+fun SmallBadgeCard(
+    badge: BadgeInfo,
+    onClick: () -> Unit
+) {
     // 빈 데이터 처리
     if (badge.title == null) {
         // 빈 칸도 흰색 박스는 그려주되 내용은 비움
@@ -233,44 +306,48 @@ fun SmallBadgeCard(badge: BadgeInfo) {
         return
     }
 
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(0.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp)
+    Box(
+        modifier = Modifier.clickable { onClick() }
     ) {
-        Column(
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(0.dp),
             modifier = Modifier
-                .fillMaxSize()
-                .padding(4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxWidth()
+                .height(120.dp)
         ) {
-            badge.imageRes?.let {
-                Image(
-                    painter = painterResource(id = it),
-                    contentDescription = badge.title,
-                    modifier = Modifier.size(48.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                badge.imageRes?.let {
+                    Image(
+                        painter = painterResource(id = it),
+                        contentDescription = badge.title,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = badge.title ?: "",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 14.sp
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = badge.level ?: "",
+                    fontSize = 10.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = badge.title ?: "",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                textAlign = TextAlign.Center,
-                lineHeight = 14.sp
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = badge.level ?: "",
-                fontSize = 10.sp,
-                color = Color.Gray,
-                textAlign = TextAlign.Center
-            )
         }
     }
 }
