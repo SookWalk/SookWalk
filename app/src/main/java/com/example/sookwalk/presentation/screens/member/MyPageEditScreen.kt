@@ -334,7 +334,7 @@ fun MyPageEditScreen(
                                             text = annotated,
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .clickable { major = dept; expanded = false }
+                                                .clickable { major = dept; isChangedMajor = true; expanded = false }
                                                 .padding(vertical = 8.dp, horizontal = 12.dp),
                                             color = Color.Black
                                         )

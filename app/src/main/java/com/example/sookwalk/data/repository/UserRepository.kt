@@ -20,7 +20,10 @@ class UserRepository @Inject constructor(
     val currentUser: Flow<UserEntity?> = userDao.getCurrentUser()
 
     // Firebase에서 현재 유저의 uid를 가져온다
-    val uid = Firebase.auth.currentUser?.uid
+    private val uid: String
+        get() = Firebase.auth.currentUser?.uid
+            ?: throw IllegalStateException("로그인되지 않은 상태에서 UserRepository 접근")
+
 
     // 닉네임 중복 여부 확인
     suspend fun isNicknameAvailable(nickname: String): Boolean {
@@ -43,25 +46,35 @@ class UserRepository @Inject constructor(
 
         userDao.updateNicknameAndMajor(newNickname, newMajor)
 
-        // 기존 닉네임
-        val oldNickname = db.collection("users").document(uid?:"")
-            .get()
-            .await()
-            .getString("nickname")
+        if (newNickname != "") {
+            // 기존 닉네임
+            val oldNickname = db.collection("users").document(uid ?: "")
+                .get()
+                .await()
+                .getString("nickname")
 
-        // 기존 닉네임 삭제
-        db.collection("nicknames")
-            .document("$oldNickname")
-            .delete()
+            // 기존 닉네임 삭제
+            db.collection("nicknames")
+                .document("$oldNickname")
+                .delete()
 
-        // 새로운 닉네임 추가
-        db.collection("nicknames").document(newNickname)
-            .set(mapOf("nickname" to newNickname))
+            // 새로운 닉네임 추가
+            db.collection("nicknames").document(newNickname)
+                .set(mapOf("nickname" to newNickname))
 
-        db.collection("users").document(uid?:"").update(mapOf(
-            "nickname" to newNickname,
-            "major" to newMajor )
-        ).await()
+            db.collection("users").document(uid).update(
+                mapOf(
+                    "nickname" to newNickname
+                )
+            ).await()
+        }
+
+        if (newMajor != "") {
+            db.collection("users").document(uid).update(mapOf(
+                "major" to newMajor )
+            ).await()
+        }
+
     }
 
 
@@ -69,7 +82,7 @@ class UserRepository @Inject constructor(
 
         userDao.updateProfileImageUrl(newProfileImageUrl)
 
-        db.collection("users").document(uid?:"").update(mapOf(
+        db.collection("users").document(uid).update(mapOf(
             "profileImageUrl" to newProfileImageUrl)
         ).await()
     }
