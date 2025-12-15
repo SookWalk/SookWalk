@@ -8,6 +8,7 @@ import com.example.sookwalk.data.repository.GoalRepository
 import com.example.sookwalk.data.repository.SettingsRepository
 import com.example.sookwalk.utils.notification.AlarmScheduler.cancelGoalNotification
 import com.example.sookwalk.utils.notification.AlarmScheduler.scheduleGoalNotification
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,8 +25,12 @@ import javax.inject.Inject
 @HiltViewModel
 class GoalViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
 ): ViewModel() {
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+
+    private val uid: String?
+        get() = auth.currentUser?.uid
 
     private val today: LocalDate = LocalDate.now()
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -44,8 +49,9 @@ class GoalViewModel @Inject constructor(
     val weekGoals: Flow<List<GoalEntity>> =
         goalRepository.getGoalsOfWeek(weekStart.format(formatter), weekEnd.format(formatter))
 
-    fun addGoal(context: Context, goal: GoalEntity) = viewModelScope.launch {
-        val newId = goalRepository.insertGoal(goal).toInt()
+    fun addGoal(context: Context, goal: GoalEntity ) = viewModelScope.launch {
+        val u = uid ?: return@launch
+        val newId = goalRepository.insertGoal(u, goal).toInt()
 
         val enabled = settingsRepository.notificationFlow.first()
         if (enabled) {
@@ -54,12 +60,14 @@ class GoalViewModel @Inject constructor(
     }
 
     fun updateGoal(context: Context, goal: GoalEntity, memo: String) = viewModelScope.launch {
-        goalRepository.updateGoalByMemo(goal.id, memo)
+        val u = uid ?: return@launch
+        goalRepository.updateGoalByMemo(u, goal.id, memo)
         scheduleGoalNotification(context, goal.id, goal.title, goal.endDate)
     }
 
     fun deleteGoal(context: Context, goal: GoalEntity) = viewModelScope.launch {
-        goalRepository.deleteGoal(goal)
+        val u = uid ?: return@launch
+        goalRepository.deleteGoal(u, goal.id.toString(), goal)
         cancelGoalNotification(context, goal.id)
     }
 

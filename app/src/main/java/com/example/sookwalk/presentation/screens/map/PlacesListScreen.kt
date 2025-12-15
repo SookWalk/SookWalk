@@ -1,5 +1,7 @@
 package com.example.sookwalk.presentation.screens.map
 
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,122 +28,123 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
-
-data class PlacesData(
-    val name: String,
-    val category: String,
-    val distance: String,
-    val address: String
-)
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.sookwalk.data.local.entity.map.SavedPlaceEntity
+import com.example.sookwalk.presentation.viewmodel.MapViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlacesBottomSheet(
-    sheetState: SheetState,
-    onDismissRequest: () -> Unit
+    places: List<SavedPlaceEntity>?,
+    isSearching: Boolean = false,
+    onDismissRequest: () -> Unit,
+    onPlaceClick: (SavedPlaceEntity) -> Unit = {}, // (선택) 장소 클릭 시 상세 이동용
+    onStarClick: (SavedPlaceEntity) -> Unit
 ) {
-
-    val PlacesList = listOf(
-        PlacesData("털보네떡꼬치", "한식", "12km", "서울특별시 용산구 갈월동 93-60 1층"),
-        PlacesData("땡초떡볶이", "떡볶이", "12km", "서울특별시 용산구 청파동3가 24-28 1층"),
-        PlacesData("조현우국밥 숙대점", "국밥", "12km", "서울특별시 용산구 청파동3가 24-30 1층"),
-        PlacesData("와플하우스", "카페", "13km", "서울특별시 용산구 청파동2가 71-75")
-    )
+    val sheetState = rememberModalBottomSheetState()
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        containerColor = Color.White, // 배경 흰색
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-        dragHandle = { BottomSheetDefaults.DragHandle() }
+        containerColor = Color.White
     ) {
-        LazyColumn(
-            contentPadding = PaddingValues(bottom = 40.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 500.dp)
         ) {
-            items(PlacesList) { data ->
-                PlaceItemUI(data)
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    thickness = 0.5.dp,
-                    color = Color.LightGray.copy(alpha = 0.5f)
-                )
+            if (isSearching || places == null) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            }
+            else if (places.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("검색 결과가 없습니다.", color = Color.Gray)
+                }
+            }
+            else {
+                LazyColumn(
+                    contentPadding = PaddingValues(bottom = 40.dp)
+                ) {
+                    items(places) { place ->
+                        PlaceItemUI(
+                            place = place,
+                            onStarClick = { onStarClick(place) }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            thickness = 0.5.dp,
+                            color = Color.LightGray.copy(0.5f)
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun PlaceItemUI(data: PlacesData) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = data.name,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = data.category,
-                color = Color.Gray,
-                fontSize = 14.sp
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
+fun PlaceItemUI(
+    place: SavedPlaceEntity,
+    viewModel: MapViewModel = hiltViewModel(),
+    onStarClick: () -> Unit
+) {
+    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(place.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Spacer(Modifier.width(6.dp))
+            Text(place.category, color = Color.Gray, fontSize = 14.sp)
+            Spacer(Modifier.weight(1f))
             Icon(
                 imageVector = Icons.Default.Star,
-                contentDescription = "별점",
+                contentDescription = "저장",
                 tint = Color(0xFFFFC107),
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(
-                imageVector = Icons.Default.MoreVert,
-                contentDescription = "더보기",
-                tint = Color.LightGray,
-                modifier = Modifier.size(20.dp)
-            )
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable { onStarClick() })
+
         }
+        Spacer(Modifier.height(4.dp))
+        Text(place.address, color = Color.Gray, fontSize = 13.sp, maxLines = 1)
+        Spacer(Modifier.height(12.dp))
 
-        Spacer(modifier = Modifier.height(4.dp))
+        PlacePhotoRow(place.placeId, viewModel)
+    }
+}
 
-        Text(
-            text = "${data.distance} · ${data.address}",
-            color = Color.Gray,
-            fontSize = 13.sp,
-            maxLines = 1
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            repeat(3) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.LightGray.copy(alpha = 0.3f))
-                ) {
-                    // 실제 이미지 넣을 땐 여기에 AsyncImage 사용
+@Composable
+fun PlacePhotoRow(placeId: String, viewModel: MapViewModel) {
+    val photos by produceState<List<Bitmap>>(initialValue = emptyList(), key1 = placeId) {
+        value = viewModel.getPlacePhotos(placeId)
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        repeat(3) { index ->
+            val bitmap = photos.getOrNull(index)
+            Box(
+                Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(8.dp)).background(Color.LightGray.copy(0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (bitmap != null) {
+                    Image(bitmap.asImageBitmap(), null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 }
             }
         }

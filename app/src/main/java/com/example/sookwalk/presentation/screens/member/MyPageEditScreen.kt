@@ -40,6 +40,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.sookwalk.R
 import com.example.sookwalk.presentation.components.TopBar
+import com.example.sookwalk.presentation.viewmodel.MajorViewModel
 import com.example.sookwalk.presentation.viewmodel.UserViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
@@ -52,7 +53,8 @@ import kotlinx.coroutines.tasks.await
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyPageEditScreen(
-    viewModel: UserViewModel,
+    userViewModel: UserViewModel,
+    majorViewModel: MajorViewModel,
     navController: NavController
     ) {
 
@@ -97,7 +99,6 @@ fun MyPageEditScreen(
                     profileImageUrlFromStorage = uri.toString()
                 }
                 .addOnFailureListener { exception ->
-                    // --- 여기가 바로 수정된 부분입니다 ---
                     // 실패 원인을 확인하여, '파일이 없는 경우'는 정상적인 케이스로 간주합니다.
                     if (exception is com.google.firebase.storage.StorageException &&
                         exception.errorCode == com.google.firebase.storage.StorageException.ERROR_OBJECT_NOT_FOUND
@@ -135,43 +136,34 @@ fun MyPageEditScreen(
     }
 
     var nickname by remember { mutableStateOf("") }
-    var isNicknameAvailable by remember { mutableStateOf<Boolean?>(null) }
+    val isNicknameAvailable by userViewModel.isNicknameAvailable.collectAsState()
     var isAvailableNicknameMsg by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        // 화면을 처음 시작할 때 닉네임 사용 가능 여부 초기화
+        userViewModel.resetNicknameCheckState()
+    }
+
+    // isNicknameAvailable 상태가 변경될 때마다 메시지를 업데이트
+    LaunchedEffect(isNicknameAvailable) {
+        when (isNicknameAvailable) {
+            true -> isAvailableNicknameMsg = "사용 가능한 닉네임입니다."
+            false -> isAvailableNicknameMsg = "이미 존재하는 닉네임입니다."
+            null -> isAvailableNicknameMsg = "" // 초기 상태 또는 확인 전
+        }
+    }
 
     var major by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
 
     var isChangedMajor by remember { mutableStateOf(false) }
 
-    var departments by remember { mutableStateOf<List<String>>(emptyList()) }
-// 화면이 처음 생성될 때 Firestore에서 모든 전공 목록을 가져옴
+    // MajorViewModel의 상태를 수집
+    val departments by majorViewModel.departments.collectAsState()
+
+    // 화면이 처음 생성될 때 Firestore에서 모든 전공 목록을 가져옴
     LaunchedEffect(Unit) {
-        val db = Firebase.firestore
-        val allMajors = mutableListOf<String>()
-
-        try {
-            // 1. 'collages' 컬렉션에 있는 모든 단과대학 문서들을 가져옴
-            val colleges = db.collection("collages").get().await()
-
-            // 2. 각 단과대학 문서에 대해 반복
-            for (collegeDoc in colleges.documents) {
-                // 3. 해당 단과대학의 'majors' 하위 컬렉션에 있는 모든 세부 전공들을 가져옴
-                val majors = db.collection("collages").document(collegeDoc.id)
-                    .collection("majors").get().await()
-
-                // 4. 가져온 세부 전공들의 이름을 리스트에 추가
-                for (majorDoc in majors.documents) {
-                    majorDoc.getString("major_name")?.let { majorName ->
-                        allMajors.add(majorName)
-                    }
-                }
-            }
-
-            // 5. 완성된 전체 전공 리스트로 상태 업데이트
-            departments = allMajors.sorted() // 가나다순으로 정렬
-        } catch (e: Exception) {
-            Log.e("Firestore", "전공 목록을 불러오는 데 실패했습니다.", e)
-        }
+        majorViewModel.getMajors()
     }
 
     val filtered = remember(major) {
@@ -275,7 +267,7 @@ fun MyPageEditScreen(
                         ) {
                             Text(
                                 text = isAvailableNicknameMsg,
-                                color = Color.Red,
+                                color = if(isNicknameAvailable == true) MaterialTheme.colorScheme.tertiary else Color.Red,
                                 style = MaterialTheme.typography.labelSmall
                             )
 
@@ -283,16 +275,7 @@ fun MyPageEditScreen(
                             Spacer(modifier = Modifier.width(8.dp))
 
                             Button(
-                                onClick = {
-                                    viewModel.isNicknameAvailable(nickname)
-
-                                    if (viewModel.isAvailableNickname.value) {
-                                        isAvailableNicknameMsg = "사용 가능한 닉네임입니다."
-                                        isNicknameAvailable = true
-                                    } else {
-                                        isAvailableNicknameMsg = "이미 존재하는 닉네임입니다."
-                                    }
-                                },
+                                onClick = { userViewModel.isNicknameAvailable(nickname) },
                                 shape = RoundedCornerShape(28),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.tertiary,
@@ -351,7 +334,7 @@ fun MyPageEditScreen(
                                             text = annotated,
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .clickable { major = dept; expanded = false }
+                                                .clickable { major = dept; isChangedMajor = true; expanded = false }
                                                 .padding(vertical = 8.dp, horizontal = 12.dp),
                                             color = Color.Black
                                         )
@@ -374,12 +357,15 @@ fun MyPageEditScreen(
                                     uploadImageToFirebase(
                                         imageUri = imageUri,
                                         onSuccess = { downloadUrl ->
+                                            // RoomDB, Firestore에도 저장
+                                            userViewModel.updateProfileImageUrl(downloadUrl)
                                             Log.d("UpdateProfile", "이미지 업로드 성공: $downloadUrl")
                                         },
                                         onFailure = { exception ->
                                             Log.e("UpdateProfile", "이미지 업로드 실패", exception)
                                         }
                                     )
+
                                 }
 
                                 // 이미지가 삭제된 경우
@@ -406,13 +392,11 @@ fun MyPageEditScreen(
                                         })
                                 }
 
+
+
                                 // ------------ 닉네임, 학과 관련 -------------
                                 if (isNicknameAvailable ?: false || isChangedMajor) {
-                                    viewModel.updateNicknameAndMajor(nickname, major) // 룸DB에 저장
-                                    Firebase.firestore.collection("users").document(uid?:"").update(mapOf(
-                                        "nickname" to nickname,
-                                        "major" to major )
-                                    )
+                                    userViewModel.updateNicknameAndMajor(nickname, major)
                                 }
                                 /* 뒤로 가기 로직 */
                                 navController.popBackStack()

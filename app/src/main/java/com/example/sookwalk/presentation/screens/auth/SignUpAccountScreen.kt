@@ -35,6 +35,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.sookwalk.navigation.Routes
+import com.example.sookwalk.presentation.components.SignUpBottomControlBar
 import com.example.sookwalk.presentation.viewmodel.AuthViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
@@ -65,25 +67,59 @@ fun SignUpAccountScreen(
 ) {
 
     var loginId by remember { mutableStateOf("") }
-    var isAvailableId by remember { mutableStateOf(false) } // 아이디 사용 가능 여부
+    val isLoginIdAvailable by viewModel.isLoginIdAvailable.collectAsState() // 아이디 사용 가능 여부
     var isAvailableIdMsg by remember { mutableStateOf("") }
+
+    // isLoginIdAvailable 상태가 변경될 때마다 메시지를 업데이트
+    LaunchedEffect(isLoginIdAvailable) {
+        when (isLoginIdAvailable) {
+            true -> isAvailableIdMsg = "사용 가능한 아이디입니다."
+            false -> isAvailableIdMsg = "이미 존재하는 아이디입니다."
+            null -> isAvailableIdMsg = "" // 초기 상태 또는 확인 전
+        }
+    }
 
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") } // 비밀번호 확인
     var isVisible by remember { mutableStateOf(false) } // 비밀번호 가시성
+    var isPasswordValid by remember { mutableStateOf(false) } // 비밀번호 조건 체크
+
+    // 유효성 검증
+    fun validatePassword(password: String): Boolean {
+        val hasUpperCase = password.any { it.isUpperCase() }
+        val hasLowerCase = password.any { it.isLowerCase() }
+        val hasSpecialChar = password.any { !it.isLetterOrDigit() }
+        val hasCorrectLength = password.length in 8..16
+        return hasUpperCase && hasLowerCase && hasSpecialChar && hasCorrectLength
+    }
 
     var email by remember { mutableStateOf("") }
+    var isSookmyungEmail by remember { mutableStateOf(false) } // 숙명 구글 계정 여부
+    val isEmailAvailable by viewModel.isEmailAvailable.collectAsState() // 이메일 중복 여부
+    var isEmailAvailableMsg by remember { mutableStateOf("")}
+
+    // isDuplicatedEmail 상태가 변경될 때마다 메시지를 업데이트
+    LaunchedEffect(isEmailAvailable) {
+        when (isEmailAvailable) {
+            true -> isEmailAvailableMsg = "사용 가능한 이메일입니다."
+            false -> isEmailAvailableMsg = "이미 존재하는 이메일입니다."
+            null -> isEmailAvailableMsg = "" // 초기 상태 또는 확인 전
+        }
+    }
+
     var authCode by remember { mutableStateOf("") } // OTP 코드
     var isTimerRunning by remember { mutableStateOf(false) } // 타이머 동작 여부
     var timeLeft by remember { mutableStateOf(180) } // 남은 시간 (초 단위, 3분 = 180초)
     var isAuthencated by remember { mutableStateOf(false) } // 이메일 인증 여부
     var isAuthencatedMsg by remember { mutableStateOf("") }
+
     var moveNextEnabled by remember { mutableStateOf(false) } // 다음 페이지 이동
 
     // 모든 요건을 만족하면 다음 페이지로 이동한다
-    if (isAvailableId && isAuthencated && password == confirmPassword) {
+    // if (isLoginIdAvailable && isAuthencated && password == confirmPassword) {
         moveNextEnabled = true
-    }
+    // }
+
 
     // isTimerRunning이 true가 되면 해당 블록이 실행
     if (isTimerRunning) {
@@ -124,33 +160,18 @@ fun SignUpAccountScreen(
         },
 
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                Button(
-                    onClick = {
-                        // 입력 정보 viewModel에 저장
-                        viewModel.updateLoginId(loginId)
-                        viewModel.updatePassword(password)
-                        viewModel.updateEmail(email)
-                        // 회원가입 - 프로필 설정 페이지로 이동
-                        navController.navigate(Routes.PROFILE)
-                    },
-                    enabled = moveNextEnabled,
-                    shape = RoundedCornerShape(28),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiary,
-                        contentColor = Color.White
-                    ),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    modifier = Modifier.padding(8.dp)
-                ) {
-                    Text("다음", style = MaterialTheme.typography.displaySmall)
-                }
-            }
+            SignUpBottomControlBar(
+                "SignUpAccount",
+                {
+                    // 입력 정보 viewModel에 저장
+                    viewModel.updateLoginId(loginId)
+                    viewModel.updatePassword(password)
+                    viewModel.updateEmail(email)
+                    // 회원가입 - 프로필 설정 페이지로 이동
+                    navController.navigate(Routes.PROFILE)
+                },
+                moveNextEnabled
+            )
         }
     ) { padding ->
         Box(
@@ -202,7 +223,7 @@ fun SignUpAccountScreen(
                         ) {
                             Text(
                                 text = isAvailableIdMsg,
-                                color = Color.Red,
+                                color = if(isLoginIdAvailable == true) MaterialTheme.colorScheme.tertiary else Color.Red,
                                 style = MaterialTheme.typography.labelSmall
                             )
 
@@ -211,13 +232,6 @@ fun SignUpAccountScreen(
                             Button(
                                 onClick = {
                                     viewModel.isLoginIdAvailable(loginId)
-
-                                    if (viewModel.isLoginIdAvailable.value) {
-                                        isAvailableIdMsg = "사용 가능한 아이디입니다."
-                                        isAvailableId = true
-                                    } else {
-                                        isAvailableIdMsg = "이미 존재하는 아이디입니다."
-                                    }
                                 },
                                 shape = RoundedCornerShape(28),
                                 colors = ButtonDefaults.buttonColors(
@@ -252,7 +266,10 @@ fun SignUpAccountScreen(
                         // 비밀번호 입력 TextField
                         TextField(
                             value = password,
-                            onValueChange = { password = it },
+                            onValueChange = {
+                                password = it
+                                isPasswordValid = validatePassword(it)
+                                            },
                             modifier = Modifier
                                 .fillMaxWidth(),
                             singleLine = true,
@@ -277,6 +294,14 @@ fun SignUpAccountScreen(
                                     Icon(imageVector = icon, contentDescription = "비밀번호 보기")
                                 }
                             }
+                        )
+
+                        // 비밀번호 조건 : 8자 이상 ~ 16자 이하, 대/소문자, 특수문자
+                        Text(
+                            text = "대소문자와 특수문자가 포함된 8~16자리의 비밀번호를 입력해주세요.",
+                            color = if (password.isEmpty() || isPasswordValid) MaterialTheme.colorScheme.tertiary else Color.Red,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(4.dp),
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
@@ -371,7 +396,16 @@ fun SignUpAccountScreen(
 
                         TextField(
                             value = email,
-                            onValueChange = { email = it },
+                            onValueChange = { newEmail ->
+
+                                // 🚀 핵심 수정 부분: 현재 값과 새로운 입력 값이 다를 경우 상태를 리셋
+                                if (email != newEmail) {
+                                    // 이전에 '이미 존재하는 이메일'이라고 떴던 메시지를 지우기 위해 상태를 null로 리셋
+                                    viewModel.resetEmailAvailable()
+                                }
+                                email = newEmail
+                                isSookmyungEmail = newEmail.endsWith("@sookmyung.ac.kr")
+                                            },
                             singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth(),
@@ -388,6 +422,24 @@ fun SignUpAccountScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
                         ) {
+                            if(!isSookmyungEmail){
+                                Text(
+                                    text = "숙명 구글 계정만 가입 가능합니다.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.padding(4.dp)
+                                )
+                            } else{
+                                // 이메일 중복 여부 검사 코드
+                                Text(
+                                    text = isEmailAvailableMsg,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if(isEmailAvailable == true)
+                                        MaterialTheme.colorScheme.tertiary else Color.Red,
+                                    modifier = Modifier.padding(4.dp)
+                                )
+                            }
+
                             // --- 타이머 표시 UI ---
                             if (isTimerRunning) {
                                 // 분과 초를 계산
@@ -406,41 +458,53 @@ fun SignUpAccountScreen(
                             Button(
 
                                 onClick = {
-                                    Firebase.auth.signInAnonymously()
-                                        .addOnCompleteListener { task ->
-                                            if (task.isSuccessful) {
-                                                Log.d("Auth", "익명 로그인 성공. OTP 전송을 시작합니다.")
-                                                val functions = Firebase.functions("asia-northeast3") // region 설정
-                                                val sendOtp = functions.getHttpsCallable("sendOtp")
-                                                val user = Firebase.auth.currentUser
+                                    // 이미 해당 이메일로 계정이 있는 경우
+                                    viewModel.isEmailAvailable(email)
 
-                                                if (user != null) {
-                                                    sendOtp.call(hashMapOf("email" to email))
-                                                        .addOnSuccessListener { result ->
+                                    if (isEmailAvailable == true) {
 
-                                                            Log.d(
-                                                                "OTP",
-                                                                "OTP 전송 성공: ${result.data}"
-                                                            )
+                                        Firebase.auth.signInAnonymously()
+                                            .addOnCompleteListener { task ->
+                                                if (task.isSuccessful) {
+                                                    Log.d("Auth", "익명 로그인 성공. OTP 전송을 시작합니다.")
+                                                    val functions =
+                                                        Firebase.functions("asia-northeast3") // region 설정
+                                                    val sendOtp =
+                                                        functions.getHttpsCallable("sendOtp")
+                                                    val user = Firebase.auth.currentUser
 
-                                                        }
-                                                        .addOnFailureListener { e ->
-                                                            Log.e("OTP",
-                                                                "OTP 전송 실패: ${e.message}")
-                                                        }
+                                                    if (user != null) {
+                                                        sendOtp.call(hashMapOf("email" to email))
+                                                            .addOnSuccessListener { result ->
+
+                                                                Log.d(
+                                                                    "OTP",
+                                                                    "OTP 전송 성공: ${result.data}"
+                                                                )
+
+                                                            }
+                                                            .addOnFailureListener { e ->
+                                                                Log.e(
+                                                                    "OTP",
+                                                                    "OTP 전송 실패: ${e.message}"
+                                                                )
+                                                            }
+                                                    } else {
+                                                        Log.e("Auth", "익명 로그인 후 user가 null입니다.")
+                                                    }
                                                 } else {
-                                                    Log.e("Auth", "익명 로그인 후 user가 null입니다.")
+                                                    Log.e("Auth", "로그인 실패: ${task.exception}")
+
                                                 }
-                                            } else {
-                                                Log.e("Auth", "로그인 실패: ${task.exception}")
-
                                             }
-                                        }
 
-                                    timeLeft = 180 // 타이머를 3분으로 초기화
-                                    isTimerRunning = true // 타이머 시작
+                                        timeLeft = 180 // 타이머를 3분으로 초기화
+                                        isTimerRunning = true // 타이머 시작
 
+                                    }
                                 },
+                                // 숙명 구글 계정이 입력된 경우
+                                enabled = isSookmyungEmail,
                                 shape = RoundedCornerShape(28),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.tertiary,
@@ -451,7 +515,11 @@ fun SignUpAccountScreen(
                                     vertical = 8.dp
                                 )
                             ) {
-                                Text("인증 번호 전송", style = MaterialTheme.typography.displaySmall)
+                                if(isEmailAvailable != true)
+                                    Text("중복 확인", style = MaterialTheme.typography.displaySmall)
+                                else {
+                                    Text("인증번호 전송", style = MaterialTheme.typography.displaySmall)
+                                }
                             }
                         }
                     }

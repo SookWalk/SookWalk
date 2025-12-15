@@ -7,6 +7,8 @@ plugins {
 
     alias(libs.plugins.google.secrets)
     alias(libs.plugins.google.services)
+
+    id("kotlin-kapt")
 }
 
 android {
@@ -52,7 +54,6 @@ secrets {
 
     defaultPropertiesFileName = "local.defaults.properties"
 }
-
 
 dependencies {
     implementation(libs.androidx.core.ktx)

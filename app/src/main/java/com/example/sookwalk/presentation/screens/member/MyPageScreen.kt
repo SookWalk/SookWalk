@@ -67,7 +67,7 @@ fun MyPageScreen(
 
     val context = LocalContext.current
 
-    // --- 2. ViewModel의 StateFlow를 구독하여 Room DB의 사용자 정보를 실시간으로 받습니다. ---
+    // ViewModel의 StateFlow를 구독하여 Room DB의 사용자 정보를 실시간으로 받습니다.
     val currentUser by viewModel.currentUser.collectAsState()
 
     Scaffold(

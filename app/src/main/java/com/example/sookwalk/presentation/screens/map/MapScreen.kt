@@ -1,22 +1,29 @@
 package com.example.sookwalk.presentation.screens.map
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
@@ -27,12 +34,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,30 +48,34 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.sookwalk.data.local.entity.map.SavedPlaceEntity
+import com.example.sookwalk.data.local.entity.map.SearchHistoryEntity
 import com.example.sookwalk.presentation.components.BottomNavBar
 import com.example.sookwalk.presentation.components.TopBar
 import com.example.sookwalk.presentation.viewmodel.MapViewModel
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.rememberUpdatedMarkerState
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
-    viewModel: MapViewModel,
+    viewModel: MapViewModel = hiltViewModel(),
     navController: NavController,
     onBack: () -> Unit,
     onAlarmClick: () -> Unit,
@@ -74,163 +84,201 @@ fun MapScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    // Data Observation
+    val categories by viewModel.favoriteCategories.collectAsState()
+    val places by viewModel.selectedCategoryPlaces.collectAsState()
+    val searchResults by viewModel.searchResults.collectAsState()
+    val suggestions by viewModel.searchSuggestions.collectAsState()
 
+    // UI States
     var showFavoritesSheet by remember { mutableStateOf(false) }
-    val favoritesSheetState = rememberModalBottomSheetState()
-
     var showPlacesSheet by remember { mutableStateOf(false) }
-    // skipPartiallyExpanded = true를 하면 시트가 처음부터 완전히 펼쳐집니다.
-    val placesSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
+    var showSearchSheet by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
 
-    // 위치 권한 상태
-    var hasFine by remember { mutableStateOf(false) }
-    var hasCoarse by remember { mutableStateOf(false) }
+    val favoritesSheetState = rememberModalBottomSheetState()
 
-    // 권한 요청 런처
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { result ->
-        hasFine = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
-        hasCoarse = result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-    }
-
-    // 최초 권한 체크 & 요청
-    LaunchedEffect(Unit) {
-        permissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
-    }
-
-    // 카메라 상태
+    // Map & Location Setup
+    val SOOKMYUNG = LatLng(37.546, 126.964)
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(SEOUL, 12f)
+        position = CameraPosition.fromLatLngZoom(SOOKMYUNG, 15f)
     }
-
-    // FusedLocationProvider
     val fused = remember { LocationServices.getFusedLocationProviderClient(context) }
 
-    // 마지막 위치 한 번 읽어 카메라 이동 (임시 구현)
-    suspend fun moveToLastKnownLocation(): Boolean { return false }
+    // Permissions
+    var hasFine by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) }
+    var hasCoarse by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) }
 
-    // UI Settings
-    val uiSettings by remember {
-        mutableStateOf(
-            MapUiSettings(
-                myLocationButtonEnabled = false,
-                zoomControlsEnabled = false
-            )
-        )
+    var placeToSave by remember { mutableStateOf<SavedPlaceEntity?>(null) }
+
+    val searchHistory by viewModel.searchHistory.collectAsState()
+
+    // Helper Function
+    @SuppressLint("MissingPermission")
+    suspend fun moveToCurrentLocation(): Boolean {
+        if (!hasFine && !hasCoarse) return false
+        return try {
+            val loc = fused.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).await()
+            if (loc != null) {
+                cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(LatLng(loc.latitude, loc.longitude), 16f), 600)
+                true
+            } else false
+        } catch (e: Exception) { false }
     }
 
-    val isLocationEnabled = hasFine || hasCoarse
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { perms ->
+        hasFine = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        hasCoarse = perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (hasFine || hasCoarse) scope.launch { moveToCurrentLocation() }
+    }
+
+    LaunchedEffect(Unit) {
+        if (!hasFine && !hasCoarse) permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+        else moveToCurrentLocation()
+    }
+
+    val mapProperties = remember(hasFine, hasCoarse) { MapProperties(isMyLocationEnabled = hasFine || hasCoarse) }
+    val uiSettings by remember { mutableStateOf(
+        MapUiSettings(
+            myLocationButtonEnabled = false,
+            zoomControlsEnabled = false
+        )
+    ) }
 
     Scaffold(
-        bottomBar = { BottomNavBar(navController = navController) },
+        bottomBar = { BottomNavBar(navController = rememberNavController()) },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        Box(
-            Modifier.fillMaxSize()
-        ) {
+        Box(Modifier.fillMaxSize()) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
+                properties = mapProperties,
                 uiSettings = uiSettings,
                 cameraPositionState = cameraPositionState
-            ) {
-                Marker(
-                    state = rememberUpdatedMarkerState(position = SEOUL),
-                    title = "서울",
-                    snippet = "예시 마커"
-                )
-            }
+            )
 
+            // Search Bar
             var query by remember { mutableStateOf("") }
             var active by remember { mutableStateOf(false) }
+
             Box(modifier = Modifier.padding(top = 90.dp)) {
                 MapSearchBar(
                     query = query,
-                    onQueryChange = { query = it },
-                    onSearch = { /* 검색 */ },
+                    onQueryChange = {
+                        query = it
+                        viewModel.onQueryChange(it)
+                    },
+                    onSearch = {
+                        active = false
+                        viewModel.onSearchFinished()
+                        viewModel.search(it)
+                        showSearchSheet = true
+                    },
                     active = active,
-                    onActiveChange = { active = it }
+                    onActiveChange = {
+                        active = it
+                        if (!it) viewModel.onSearchFinished()
+                    },
+                    suggestions = suggestions,
+                    searchHistory = searchHistory,
+                    onHistoryClick = { historyQuery ->
+                        query = historyQuery
+                        active = false
+                        viewModel.search(historyQuery)
+                        showSearchSheet = true
+                    },
+                    onDeleteClick = { viewModel.deleteSearchHistory(it) },
+                    onSuggestionClick = { suggestion ->
+                        val text = suggestion.getPrimaryText(null).toString()
+                        query = text
+                        active = false
+                        viewModel.onSearchFinished()
+                        viewModel.search(text)
+                        showSearchSheet = true
+                    }
                 )
             }
 
             Row(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .fillMaxWidth()
-                    .padding(bottom = padding.calculateBottomPadding() + 20.dp, end = 20.dp, start = 20.dp),
+                modifier = Modifier.align(Alignment.BottomEnd).fillMaxWidth().padding(bottom = padding.calculateBottomPadding() + 20.dp, end = 20.dp, start = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                FloatingActionButton(
-                    onClick = { scope.launch { moveToLastKnownLocation() } },
-                    shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                ) {
-                    Icon(Icons.Default.MyLocation, contentDescription = "현재 위치로 이동")
+                FloatingActionButton(onClick = { scope.launch { moveToCurrentLocation() } }, shape = CircleShape, containerColor = MaterialTheme.colorScheme.secondary) {
+                    Icon(Icons.Default.MyLocation, contentDescription = "Current Location")
                 }
-
-                FloatingActionButton(
-                    onClick = { showFavoritesSheet = true },
-                    shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                ) {
+                FloatingActionButton(onClick = { showFavoritesSheet = true }, shape = CircleShape, containerColor = MaterialTheme.colorScheme.secondary) {
                     Icon(Icons.Default.Star, contentDescription = "Favorites", tint = Color.White)
                 }
             }
 
-            Column(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-            ) {
-                TopBar(
-                    screenName = "지도",
-                    onBack = onBack,
-                    onMenuClick = onMenuClick,
-                    onAlarmClick = onAlarmClick
-                )
+            Column(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()) {
+                TopBar(screenName = "지도", onBack = onBack, onMenuClick = onMenuClick, onAlarmClick = onAlarmClick)
             }
 
             if (showFavoritesSheet) {
                 FavoritesBottomSheet(
                     sheetState = favoritesSheetState,
+                    categories = categories,
                     onDismiss = { showFavoritesSheet = false },
-                    onAddClick = {
-                        showAddDialog = true
+                    onItemClick = { category ->
+                        viewModel.selectCategory(category.id)
+                        scope.launch { favoritesSheetState.hide() }.invokeOnCompletion {
+                            showFavoritesSheet = false
+                            showPlacesSheet = true
+                        }
                     },
-                    onCategoryClick = {
-                        showFavoritesSheet = false
-                        showPlacesSheet = true
-                    }
+                    onAddClick = { showAddDialog = true },
+                    onDeleteCategory = { viewModel.deleteCategory(it) }
                 )
             }
 
             if (showPlacesSheet) {
                 PlacesBottomSheet(
-                    sheetState = placesSheetState,
-                    onDismissRequest = { showPlacesSheet = false }
+                    places = places,
+                    onDismissRequest = { showPlacesSheet = false },
+                    onStarClick = { place ->
+                        placeToSave = place
+                    }
+                )
+            }
+
+            if (showSearchSheet) {
+                PlacesBottomSheet(
+                    places = searchResults,
+                    onDismissRequest = {
+                        showSearchSheet = false
+                        viewModel.clearSearchResults()
+                    },
+                    onStarClick = { place ->
+                        placeToSave = place
+                    }
+                )
+            }
+
+            if (placeToSave != null) {
+                AddToCategoryDialog(
+                    categories = categories.map{ it.category },
+                    onDismiss = { placeToSave = null },
+                    onConfirm = { selectedCategoryIds ->
+                        viewModel.savePlaceToCategories(placeToSave!!, selectedCategoryIds)
+                        placeToSave = null
+                    },
+                    onCreateCategory = { name, color ->
+                        viewModel.addCategory(name, color)
+                    }
                 )
             }
 
             if (showAddDialog) {
                 AddFavoriteDialog(
-                    onDismiss = { showAddDialog = false }, // 바깥 누르면 닫기
-                    onAdd = { name, colorLong ->
-                        showAddDialog = false
-                    }
+                    onDismiss = { showAddDialog = false },
+                    onAdd = { name, color -> viewModel.addCategory(name, color); showAddDialog = false }
                 )
             }
         }
     }
 }
 
-private val SEOUL = LatLng(37.5665, 126.9780)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapSearchBar(
@@ -238,34 +286,127 @@ fun MapSearchBar(
     onQueryChange: (String) -> Unit,
     onSearch: (String) -> Unit,
     active: Boolean,
-    onActiveChange: (Boolean) -> Unit
+    onActiveChange: (Boolean) -> Unit,
+    suggestions: List<AutocompletePrediction>,
+    searchHistory: List<SearchHistoryEntity>,
+    onHistoryClick: (String) -> Unit,
+    onDeleteClick: (SearchHistoryEntity) -> Unit,
+    onSuggestionClick: (AutocompletePrediction) -> Unit,
 ) {
     DockedSearchBar(
         query = query,
         onQueryChange = onQueryChange,
-        onSearch = { onSearch(query) },
+        onSearch = onSearch,
         active = active,
         onActiveChange = onActiveChange,
-        placeholder = { Text("Search text") },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Default.Menu,
-                contentDescription = null
-            )
-        },
+        placeholder = { Text("장소 검색") },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
         trailingIcon = {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = null
-            )
+            if (active) {
+                Icon(
+                    modifier = Modifier.clickable {
+                        if (query.isNotEmpty()) {
+                            onQueryChange("")
+                        } else {
+                            onActiveChange(false)
+                        }
+                    },
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Close"
+                )
+            }
         },
         modifier = Modifier
             .padding(16.dp)
             .fillMaxWidth(),
         colors = SearchBarDefaults.colors(
             containerColor = MaterialTheme.colorScheme.surface,
-            dividerColor = Color.Transparent
         ),
         shape = RoundedCornerShape(28.dp)
-    ) { /* Search suggestions 넣고 싶으면 여기 */ }
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            if (query.isEmpty()) {
+                if (searchHistory.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "최근 검색어",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                }
+
+                items(searchHistory) { history ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onHistoryClick(history.query) }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = null,
+                            tint = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = history.query,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "삭제",
+                            tint = Color.LightGray,
+                            modifier = Modifier
+                                .clickable { onDeleteClick(history) }
+                                .padding(4.dp)
+                        )
+                    }
+                }
+            }
+            // 검색어가 있으면 -> 추천 검색어(Autocomplete) 표시
+            else {
+                items(suggestions) { suggestion ->
+                    val mainText = suggestion.getPrimaryText(null).toString()
+                    val subText = suggestion.getSecondaryText(null).toString()
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSuggestionClick(suggestion) }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = mainText,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (subText.isNotEmpty()) {
+                                Text(
+                                    text = subText,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

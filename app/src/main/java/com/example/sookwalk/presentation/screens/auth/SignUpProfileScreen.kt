@@ -35,6 +35,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,7 +51,10 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.sookwalk.data.local.entity.user.UserEntity
+import com.example.sookwalk.navigation.Routes
+import com.example.sookwalk.presentation.components.SignUpBottomControlBar
 import com.example.sookwalk.presentation.viewmodel.AuthViewModel
+import com.example.sookwalk.presentation.viewmodel.MajorViewModel
 import com.example.sookwalk.presentation.viewmodel.UserViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -64,10 +68,16 @@ import kotlinx.coroutines.tasks.await
 fun SignUpProfileScreen(
     authViewModel: AuthViewModel,
     userViewModel: UserViewModel,
+    majorViewModel: MajorViewModel,
     navController: NavController
 ) {
+    // AuthViewModel의 StateFlow 값들을 수집
+    val emailValue by authViewModel.email.collectAsState()
+    val loginIdValue by authViewModel.loginId.collectAsState()
+    val passwordValue by authViewModel.password.collectAsState()
 
     var nickname by remember { mutableStateOf("") }
+    val isNicknameAvailable by userViewModel.isNicknameAvailable.collectAsState() // 아이디 사용 가능 여부
     var isAvailableNicknameMsg by remember { mutableStateOf("")}
 
     // 랜덤 닉네임 placeholder 생성
@@ -78,6 +88,16 @@ fun SignUpProfileScreen(
         "${adjectives.random()} ${nouns.random()}$number"
     }
 
+    // isNicknameAvailable 상태가 변경될 때마다 메시지를 업데이트
+    LaunchedEffect(isNicknameAvailable) {
+        when (isNicknameAvailable) {
+            true -> isAvailableNicknameMsg = "사용 가능한 닉네임입니다."
+            false -> isAvailableNicknameMsg = "이미 존재하는 닉네임입니다."
+            null -> isAvailableNicknameMsg = "" // 초기 상태 또는 확인 전
+        }
+    }
+
+
     // 닉네임을 입력받지 않았다면 placeholder 값을 사용
     val finalNickname =
         if (nickname.isBlank()) randomPlaceholder else nickname
@@ -85,36 +105,12 @@ fun SignUpProfileScreen(
     var major by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
 
-    var departments by remember { mutableStateOf<List<String>>(emptyList()) }
+    // MajorViewModel의 상태를 수집
+    val departments by majorViewModel.departments.collectAsState()
 
     // 화면이 처음 생성될 때 Firestore에서 모든 전공 목록을 가져옴
     LaunchedEffect(Unit) {
-        val db = Firebase.firestore
-        val allMajors = mutableListOf<String>()
-
-        try {
-            // 1. 'collages' 컬렉션에 있는 모든 단과대학 문서들을 가져옴
-            val colleges = db.collection("collages").get().await()
-
-            // 2. 각 단과대학 문서에 대해 반복
-            for (collegeDoc in colleges.documents) {
-                // 3. 해당 단과대학의 'majors' 하위 컬렉션에 있는 모든 세부 전공들을 가져옴
-                val majors = db.collection("collages").document(collegeDoc.id)
-                    .collection("majors").get().await()
-
-                // 4. 가져온 세부 전공들의 이름을 리스트에 추가
-                for (majorDoc in majors.documents) {
-                    majorDoc.getString("major_name")?.let { majorName ->
-                        allMajors.add(majorName)
-                    }
-                }
-            }
-
-            // 5. 완성된 전체 전공 리스트로 상태 업데이트
-            departments = allMajors.sorted() // 가나다순으로 정렬
-        } catch (e: Exception) {
-            Log.e("Firestore", "전공 목록을 불러오는 데 실패했습니다.", e)
-        }
+        majorViewModel.getMajors()
     }
 
     // 입력된 텍스트가 포함된 전공만 필터링
@@ -148,58 +144,28 @@ fun SignUpProfileScreen(
         },
 
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                Button(
-                    onClick = {
-                        // 정보 저장
-                        authViewModel.updateNickname(finalNickname)
-                        authViewModel.updateMajor(major)
+            SignUpBottomControlBar(
+                "SignUpProfile",
+                {
+                    // FirebaseAuth로 저장할 땐 이메일 + 비밀번호로
+                    authViewModel.signUp(
+                        email = emailValue,
+                        loginId =  loginIdValue,
+                        password = passwordValue,
+                        nickname = finalNickname,
+                        major = major
+                    )
 
-                        // Firestore에 회원 정보 저장
-                        // 지금까지 받은 정보를 엔티티로 변환
-                        val user: UserEntity = UserEntity(
-                            userId = 0, // PK 관련 로직 고민 필요
-                            major = authViewModel.major,
-                            email = authViewModel.email,
-                            nickname = authViewModel.nickname,
-                            loginId = authViewModel.loginId,
-                            profileImageUrl = ""
-                        )
-
-                        // FirebaseAuth로 계정 생성
-                        // FirebaseAuth에 저장할 땐 이메일 + 비밀번호로
-                        authViewModel.insertNewAccount(
-                            authViewModel.email,
-                            authViewModel.loginId,
-                            authViewModel.password,
-                            finalNickname,
-                            major)
-
-                        // 로그인 페이지로 이동
-                        navController.navigate("login"){
-                            // 이전 페이지 방문 기록 삭제
-                            popUpTo(navController.graph.startDestinationId){
-                                inclusive = true
-                            }
-                            launchSingleTop = true
-                        }
-                    },
-                    shape = RoundedCornerShape(28),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiary,
-                        contentColor = Color.White
-                    ),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    modifier = Modifier.padding(8.dp)
-                ) {
-                    Text("회원 가입", style = MaterialTheme.typography.displaySmall)
-                }
-            }
+                    navController.navigate(Routes.LOGIN){
+                    // 이전 페이지 방문 기록 삭제
+                    popUpTo(navController.graph.startDestinationId){
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                    }
+                },
+                true
+            )
         }
     ) { padding ->
         Box(
@@ -246,7 +212,7 @@ fun SignUpProfileScreen(
                     ) {
                         Text(
                             text = isAvailableNicknameMsg,
-                            color = Color.Red,
+                            color = if(isNicknameAvailable == true) MaterialTheme.colorScheme.tertiary else Color.Red,
                             style = MaterialTheme.typography.labelSmall
                         )
 
@@ -255,12 +221,6 @@ fun SignUpProfileScreen(
                         Button(
                             onClick = {
                                 userViewModel.isNicknameAvailable(finalNickname)
-
-                                if (userViewModel.isAvailableNickname.value) {
-                                    isAvailableNicknameMsg = "사용 가능한 닉네임입니다."
-                                } else {
-                                    isAvailableNicknameMsg = "이미 존재하는 닉네임입니다."
-                                }
                             },
                             shape = RoundedCornerShape(28),
                             colors = ButtonDefaults.buttonColors(

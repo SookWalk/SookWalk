@@ -3,13 +3,18 @@ package com.example.sookwalk.di
 import android.content.Context
 import androidx.room.Room
 import com.example.sookwalk.data.local.AppDatabase
+import com.example.sookwalk.data.local.dao.FavoriteDao
 import com.example.sookwalk.data.local.dao.GoalDao
 import com.example.sookwalk.data.local.dao.NotificationDao
+import com.example.sookwalk.data.local.dao.SearchHistoryDao
 import com.example.sookwalk.data.local.dao.StepDao
 import com.example.sookwalk.data.local.dao.UserDao
 import com.example.sookwalk.data.repository.GoalRepository
+import com.example.sookwalk.data.repository.MapRepository
 import com.example.sookwalk.data.repository.NotificationRepository
 import com.example.sookwalk.data.repository.UserRepository
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.net.PlacesClient
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -48,8 +53,6 @@ object AppModule {
         return UserRepository(userDao)
     }
 
-
-
     // Notification
     @Provides
     fun provideNotificationDao(appDatabase: AppDatabase): NotificationDao {
@@ -76,5 +79,32 @@ object AppModule {
     @Provides
     fun provideStepDao(appDatabase: AppDatabase): StepDao {
         return appDatabase.stepDao()
+    }
+
+    // --- Map & Places 관련 추가 ---
+    @Provides
+    fun provideFavoriteDao(appDatabase: AppDatabase): FavoriteDao {
+        return appDatabase.favoriteDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providePlacesClient(@ApplicationContext context: Context): PlacesClient {
+        return Places.createClient(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMapRepository(
+        favoriteDao: FavoriteDao,
+        searchHistoryDao: SearchHistoryDao,
+        placesClient: PlacesClient
+    ): MapRepository {
+        return MapRepository(favoriteDao, searchHistoryDao, placesClient)
+    }
+
+    @Provides
+    fun provideSearchHistoryDao(appDatabase: AppDatabase): SearchHistoryDao {
+        return appDatabase.searchHistoryDao()
     }
 }

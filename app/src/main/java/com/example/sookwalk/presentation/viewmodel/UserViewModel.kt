@@ -9,6 +9,7 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -18,10 +19,6 @@ class UserViewModel @Inject constructor(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    private var _isAvailableNickname = MutableStateFlow<Boolean>(false)
-    val isAvailableNickname = _isAvailableNickname
-
-
     val currentUser: StateFlow<UserEntity?>
             = userRepository.currentUser.stateIn(
         scope = viewModelScope,
@@ -29,11 +26,19 @@ class UserViewModel @Inject constructor(
         initialValue = null )// 초기값 설정
 
     // 닉네임 중복 체크
+    var _isNicknameAvailable = MutableStateFlow<Boolean?>(null)
+    val isNicknameAvailable = _isNicknameAvailable.asStateFlow()
+
     fun isNicknameAvailable(nickname: String){
         viewModelScope.launch {
             val available = userRepository.isNicknameAvailable(nickname)
-            _isAvailableNickname.value = available
+            _isNicknameAvailable.value = available
         }
+    }
+
+    // 닉네임 사용 가능 여부 초기화
+    fun resetNicknameCheckState() {
+        _isNicknameAvailable.value = null
     }
 
     // 닉네임, 학과 변경
