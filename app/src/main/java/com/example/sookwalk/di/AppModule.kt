@@ -15,7 +15,10 @@ import com.example.sookwalk.data.repository.NotificationRepository
 import com.example.sookwalk.data.repository.UserRepository
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.firebase.Firebase
+import com.google.firebase.app
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,7 +35,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideFirestore(): FirebaseFirestore =
-        FirebaseFirestore.getInstance("sookwalk")
+        FirebaseFirestore.getInstance(Firebase.app, "sookwalk")
 
     // Room DB 인스턴스 제공
     @Provides
