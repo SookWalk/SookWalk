@@ -97,13 +97,13 @@ fun BadgeScreen(
             "챔피언 워커",
             "레벨 $rankLevel/5",
             R.drawable.character_01,
-            "\uD83D\uDC51 대항전에서 ${totalRanks}번 상위권에 들었습니다!",
+            "\uD83D\uDC51 단과대 별 대항전에서\n${totalRanks}번 상위권에 들었습니다!",
             rankDate),
         BadgeInfo(
             "의리왕",
-            "레벨 n/5",
+            "레벨 1/5",
             R.drawable.character_01,
-            "\uD83E\uDD70 숙워크와 함께한지 n일 되었습니다!",
+            "\uD83E\uDD70 숙워크와 함께한지 50일 되었습니다!",
             null),
         BadgeInfo(null, null, null, "", null),
         BadgeInfo(null, null, null, "", null),
@@ -129,9 +129,17 @@ fun BadgeScreen(
 
     if (selectedBadge != null) {
         Dialog(onDismissRequest = { selectedBadge = null }) {
+            val date = remember(selectedBadge?.date) {
+                selectedBadge?.date?.let { timestamp ->
+                    val sdf = java.text.SimpleDateFormat("yyyy.MM.dd", java.util.Locale.getDefault())
+                    sdf.format(timestamp.toDate())
+                } ?: "날짜 정보 없음"
+            }
+
             Box(
                 modifier = Modifier
-                    .size(260.dp) // 정사각형
+                    .width(260.dp)
+                    .wrapContentHeight()
                     .background(Color.White, RoundedCornerShape(16.dp))
                     .padding(20.dp),
                 contentAlignment = Alignment.Center
@@ -157,6 +165,14 @@ fun BadgeScreen(
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = date,
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
                         text = selectedBadge?.level ?: "",
