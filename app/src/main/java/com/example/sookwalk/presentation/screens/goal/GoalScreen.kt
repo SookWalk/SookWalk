@@ -133,7 +133,7 @@ fun CalendarCard(
             showModeToggle = false, // 날짜/연도 선택 토글 숨김
             colors = DatePickerDefaults.colors(
                 containerColor = MaterialTheme.colorScheme.primary,
-                selectedDayContainerColor = Color(0xFFB2D4BD),
+                selectedDayContainerColor = MaterialTheme.colorScheme.secondary,
                 selectedDayContentColor = Color.White,
                 todayDateBorderColor = MaterialTheme.colorScheme.surface,
                 todayContentColor = MaterialTheme.colorScheme.surface,
@@ -185,7 +185,7 @@ fun ChallengesCard(
                 Button(
                     onClick = onAddClick,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFB2D4BD),
+                        containerColor = MaterialTheme.colorScheme.secondary,
                         contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(10.dp),
@@ -246,7 +246,7 @@ fun ChallengeListItem(
                         .fillMaxWidth()
                         .height(4.dp)
                         .clip(RoundedCornerShape(2.dp)),
-                    color = Color(0xFFB2D4BD),
+                    color = MaterialTheme.colorScheme.secondary,
                     trackColor = Color.LightGray.copy(alpha = 0.5f),
                 )
             }

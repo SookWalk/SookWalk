@@ -21,8 +21,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
@@ -57,7 +59,8 @@ fun FavoritesBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.background,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
@@ -68,7 +71,7 @@ fun FavoritesBottomSheet(
             Text(
                 text = "+ 즐겨찾기 추가",
                 fontSize = 16.sp,
-                color = Color(0xFF555555),
+                color = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onAddClick() }
@@ -105,7 +108,7 @@ fun FavoritesBottomSheet(
                 dismissButton = {
                     TextButton(onClick = { categoryToDelete = null }) { Text("취소") }
                 },
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.background,
             )
         }
     }
@@ -162,7 +165,7 @@ fun FavoriteRow(
                 Text(
                     text = "${itemWithCount.placeCount}",
                     fontSize = 14.sp,
-                    color = Color.DarkGray,
+                    color = Color.Gray,
                     modifier = Modifier.padding(start = 2.dp)
                 )
             }

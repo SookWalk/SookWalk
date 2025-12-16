@@ -133,6 +133,8 @@ fun MapScreen(
     }
 
     LaunchedEffect(Unit) {
+        viewModel.syncData()
+
         if (!hasFine && !hasCoarse) permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
         else moveToCurrentLocation()
     }
@@ -204,7 +206,7 @@ fun MapScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 FloatingActionButton(onClick = { scope.launch { moveToCurrentLocation() } }, shape = CircleShape, containerColor = MaterialTheme.colorScheme.secondary) {
-                    Icon(Icons.Default.MyLocation, contentDescription = "Current Location")
+                    Icon(Icons.Default.MyLocation, contentDescription = "Current Location", tint = Color.White)
                 }
                 FloatingActionButton(onClick = { showFavoritesSheet = true }, shape = CircleShape, containerColor = MaterialTheme.colorScheme.secondary) {
                     Icon(Icons.Default.Star, contentDescription = "Favorites", tint = Color.White)
@@ -358,7 +360,8 @@ fun MapSearchBar(
                         Text(
                             text = history.query,
                             style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -394,7 +397,8 @@ fun MapSearchBar(
                             Text(
                                 text = mainText,
                                 style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                             if (subText.isNotEmpty()) {
                                 Text(

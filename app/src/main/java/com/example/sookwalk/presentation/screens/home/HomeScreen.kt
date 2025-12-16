@@ -38,18 +38,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.FontWeight.Companion.Bold
-import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -59,8 +55,6 @@ import com.example.sookwalk.presentation.components.BottomNavBar
 import com.example.sookwalk.presentation.components.TopBar
 import com.example.sookwalk.presentation.viewmodel.GoalViewModel
 import com.example.sookwalk.presentation.viewmodel.StepViewModel
-import com.example.sookwalk.ui.theme.Black
-import com.example.sookwalk.ui.theme.Grey20
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -152,7 +146,7 @@ fun HomeScreen(
                     text = "대항전",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
             Spacer(modifier = Modifier.height(10.dp))
@@ -190,7 +184,7 @@ fun MainHomeCard(
         ) {
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Column(
                     modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
@@ -225,7 +219,7 @@ fun MainHomeCard(
                     text = goal?.title ?: "등록된 목표 없음", // 목표가 없으면 기본 텍스트
                     fontSize = 20.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
 
@@ -264,21 +258,21 @@ fun WeekTitleCard(title: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .background(Color(0xFFB2D4BD), shape = RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.secondary, shape = RoundedCornerShape(8.dp))
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Icon(
             painter = painterResource(id = R.drawable.calendar),
             contentDescription = null,
             modifier = Modifier.size(16.dp),
-            tint = Color.Black
+            tint = MaterialTheme.colorScheme.onPrimary
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = title,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onPrimary
         )
     }
 }
@@ -332,7 +326,7 @@ fun WeekHomeCard(date: LocalDate, goals: List<GoalEntity>) {
                     imageVector = if (isAllDone) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
-                    tint = if(isAllDone) Color.Black else Color.Gray
+                    tint = if(isAllDone) MaterialTheme.colorScheme.onPrimary else Color.Gray
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
@@ -356,7 +350,7 @@ fun WeekHomeCard(date: LocalDate, goals: List<GoalEntity>) {
                     text = if (isAllDone) "모두 완료!" else "${totalCount}개의 목표 중\n${completedCount}개 달성",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     lineHeight = 18.sp
                 )
             }
@@ -384,7 +378,7 @@ fun WalkHomeCard(
 
     Card(
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onCardClick)
@@ -411,7 +405,7 @@ fun WalkHomeCard(
                     text = "오늘의 걸음수",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
 
@@ -429,9 +423,7 @@ fun WalkHomeCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    // 1. 원형 프로그레스 바
                     Box(contentAlignment = Alignment.Center) {
-                        // 배경 원
                         CircularProgressIndicator(
                             progress = { 1f },
                             modifier = Modifier.size(60.dp),
@@ -439,7 +431,6 @@ fun WalkHomeCard(
                             strokeWidth = 7.dp,
                         )
 
-                        // 진행 원 (목표가 있을 때만 초록색 표시)
                         if (isGoalSet) {
                             CircularProgressIndicator(
                                 progress = { progress },
@@ -455,7 +446,7 @@ fun WalkHomeCard(
                             text = if (isGoalSet) "${percentage}%" else "-",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isGoalSet) Color.Black else Color.Gray
+                            color = if (isGoalSet) MaterialTheme.colorScheme.onPrimary else Color.Gray
                         )
                     }
 
@@ -463,7 +454,6 @@ fun WalkHomeCard(
 
                     // 2. 텍스트 정보
                     Column {
-                        // 목표 걸음 수 텍스트 (조건부 표시)
                         Text(
                             text = if (isGoalSet) "목표: $targetSteps" else "목표 없음",
                             fontSize = 11.sp,
@@ -471,7 +461,6 @@ fun WalkHomeCard(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        // 현재 걸음 수 (항상 표시)
                         Text(
                             text = "$currentTotalSteps 걸음",
                             fontSize = 20.sp,
@@ -513,7 +502,7 @@ fun RankHomeCard(onRankingBtnClick: () -> Unit) {
                         text = "SMWU 산책왕전",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))

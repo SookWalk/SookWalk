@@ -21,11 +21,11 @@ data class SavedPlaceEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val remoteId: String = "",
 
-    val categoryId: Long,   // 소속된 카테고리 ID
-    val placeId: String,    // Google Places API 고유 ID (사진 로딩 등에 사용)
-    val name: String,       // 장소 이름
-    val address: String,    // 주소
-    val category: String,   // 장소 타입 (예: restaurant)
-    val latitude: Double,   // 위도
-    val longitude: Double,   // 경도
+    val categoryId: Long = 0,
+    val placeId: String = "",
+    val name: String = "",
+    val address: String = "",
+    val category: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0
 )

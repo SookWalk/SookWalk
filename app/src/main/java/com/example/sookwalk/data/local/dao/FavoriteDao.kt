@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.example.sookwalk.data.local.entity.map.CategoryWithCount
 import com.example.sookwalk.data.local.entity.map.FavoriteCategoryEntity
 import com.example.sookwalk.data.local.entity.map.SavedPlaceEntity
@@ -25,7 +26,7 @@ interface FavoriteDao {
     fun getAllCategories(): Flow<List<CategoryWithCount>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertCategory(category: FavoriteCategoryEntity)
+    suspend fun insertCategory(category: FavoriteCategoryEntity): Long
 
     @Delete
     suspend fun deleteCategory(category: FavoriteCategoryEntity)
@@ -44,4 +45,7 @@ interface FavoriteDao {
 
     @Query("SELECT * FROM saved_places WHERE remoteId = :remoteId LIMIT 1")
     suspend fun getPlaceByRemoteId(remoteId: String): SavedPlaceEntity?
+
+    @Update
+    suspend fun updateCategory(category: FavoriteCategoryEntity)
 }

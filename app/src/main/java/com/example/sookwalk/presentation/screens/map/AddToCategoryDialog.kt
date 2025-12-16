@@ -45,7 +45,7 @@ fun AddToCategoryDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.background,
             modifier = Modifier.fillMaxWidth().heightIn(min = 300.dp, max = 500.dp)
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
@@ -73,10 +73,10 @@ fun AddToCategoryDialog(
                             Icon(Icons.Default.Add, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("새 즐겨찾기 만들기", color = Color.Black, fontWeight = FontWeight.Medium)
+                        Text("새 즐겨찾기 만들기", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Medium)
                     }
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onPrimary)
 
                     if (categories.isEmpty()) {
                         Text("즐겨찾기가 없습니다.", color = Color.Gray, modifier = Modifier.padding(vertical = 12.dp))
@@ -99,7 +99,10 @@ fun AddToCategoryDialog(
                                             if (isChecked) selectedIds.add(category.id)
                                             else selectedIds.remove(category.id)
                                         },
-                                        colors = CheckboxDefaults.colors(checkedColor = Color(0xFF004D40))
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = MaterialTheme.colorScheme.tertiary,
+                                            checkmarkColor = Color.White
+                                        )
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Box(Modifier.size(12.dp).background(Color(category.iconColor), CircleShape))
@@ -122,8 +125,8 @@ fun AddToCategoryDialog(
                     Button(
                         onClick = { onConfirm(selectedIds) },
                         enabled = selectedIds.isNotEmpty(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF004D40))
-                    ) { Text("저장") }
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                    ) { Text("저장", color = Color.White) }
                 }
             }
         }
