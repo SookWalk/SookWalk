@@ -6,6 +6,7 @@ import com.example.sookwalk.data.local.entity.user.UserEntity
 import com.google.firebase.Firebase
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -15,7 +16,8 @@ import kotlinx.coroutines.tasks.await
 
 
 class AuthRepository @Inject constructor(
-    private val dao: UserDao
+    private val dao: UserDao,
+    private val db: FirebaseFirestore
 ) {
 
     // 현재 사용중인 유저 정보 가져오기
@@ -23,9 +25,6 @@ class AuthRepository @Inject constructor(
 
     // FirebaseAuth로 로그인
     val auth = FirebaseAuth.getInstance()
-
-    // DB
-    val db = Firebase.firestore("sookwalk")
 
     // 로그인 시도
     private val _isLoggedIn = MutableStateFlow(false)

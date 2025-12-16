@@ -1,5 +1,7 @@
 package com.example.sookwalk.presentation.screens.goal
 
+import android.R.attr.fontWeight
+import android.R.attr.subtitle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,31 +17,62 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.sookwalk.data.local.entity.goal.GoalEntity
 import com.example.sookwalk.presentation.components.BottomNavBar
 import com.example.sookwalk.presentation.components.TopBar
 import com.example.sookwalk.presentation.viewmodel.AuthViewModel
 import com.example.sookwalk.presentation.viewmodel.GoalViewModel
+import com.example.sookwalk.presentation.viewmodel.StepViewModel
 import com.example.sookwalk.utils.goal.convertMillisToDateString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoalScreen(
     viewModel: GoalViewModel,
+    stepViewModel: StepViewModel,
     navController: NavController,
     onBack: () -> Unit,
     onAlarmClick: () -> Unit,
     onMenuClick: () -> Unit,
     onAddGoalClick: (String) -> Unit
 ) {
+    val context = LocalContext.current
+
+    val goals by viewModel.goalsForSelectedDate.collectAsState()
+
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = System.currentTimeMillis() // 오늘 날짜 기본값
+        initialSelectedDateMillis = System.currentTimeMillis()
     )
 
+    var currentSteps by remember { mutableIntStateOf(0) }
+
+    val todaySteps by stepViewModel.todaySteps.collectAsState() // 실시간 오늘 걸음 수
+    var displayedSteps by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(datePickerState.selectedDateMillis, todaySteps) {
+        val millis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+        val selectedDate = java.time.Instant.ofEpochMilli(millis)
+            .atZone(java.time.ZoneId.systemDefault())
+            .toLocalDate()
+
+        val today = java.time.LocalDate.now()
+
+        viewModel.updateSelectedDate(millis)
+
+        if (selectedDate == today) {
+            displayedSteps = todaySteps
+        } else {
+            val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+            val dateStr = formatter.format(java.util.Date(millis))
+            displayedSteps = stepViewModel.getStepsForDate(dateStr) // suspend 함수 호출
+        }
+    }
     Scaffold(
         topBar = {
             TopBar(
@@ -64,13 +97,15 @@ fun GoalScreen(
             Spacer(modifier = Modifier.height(24.dp))
             // 2. M3 ListItem을 사용한 챌린지 카드
             ChallengesCard(
+                currentSteps = displayedSteps,
+                goals = goals,
                 onAddClick = {
-                    // 선택된 날짜(Millis)를 가져와서 포맷팅
                     val selectedDateMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
-                    val formattedDate = convertMillisToDateString(selectedDateMillis)
-
+                    val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                    val formattedDate = formatter.format(java.util.Date(selectedDateMillis))
                     onAddGoalClick(formattedDate)
-                }
+                },
+                onDeleteClick = { goal -> viewModel.deleteGoal(context, goal) }
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -84,11 +119,6 @@ fun GoalScreen(
 fun CalendarCard(
     state: DatePickerState
 ) {
-    val datePickerState = rememberDatePickerState(
-        // 초기 선택된 날짜 (Epoch Millis)
-        initialSelectedDateMillis = 1755481200000L
-    )
-
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -124,7 +154,10 @@ fun CalendarCard(
 // 챌린지 카드 (M3 ListItem 사용)
 @Composable
 fun ChallengesCard(
-    onAddClick: () -> Unit
+    currentSteps: Int,
+    goals: List<GoalEntity>,
+    onAddClick: () -> Unit,
+    onDeleteClick: (GoalEntity) -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -143,7 +176,7 @@ fun ChallengesCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "4256 걸음",
+                    text = "$currentSteps 걸음",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -164,41 +197,84 @@ fun ChallengesCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 챌린지 목록 (M3 ListItem 사용)
-            ChallengeListItem(title = "5000보", subtitle = "아자아자 화이팅")
-            ChallengeListItem(title = "100000보", subtitle = "아자아자 화이팅")
+            if (goals.isEmpty()) {
+                Text(
+                    "등록된 챌린지가 없습니다.",
+                    modifier = Modifier.padding(8.dp),
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+            } else {
+                goals.forEach { goal ->
+                    ChallengeListItem(goal = goal, onDelete = { onDeleteClick(goal) })
+                }
+            }
         }
     }
 }
 
 @Composable
-fun ChallengeListItem(title: String, subtitle: String) {
+fun ChallengeListItem(
+    goal: GoalEntity,
+    onDelete: () -> Unit
+) {
+    val progress = if (goal.targetSteps > 0) {
+        (goal.currentSteps.toFloat() / goal.targetSteps.toFloat()).coerceIn(0f, 1f)
+    } else 0f
+
     ListItem(
         headlineContent = {
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            // 제목: 목표 걸음 수
+            Text("${goal.targetSteps}보", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         },
         supportingContent = {
-            Text(subtitle, fontSize = 12.sp, color = Color.Gray)
+            Column {
+                if (goal.memo.isNotEmpty()) {
+                    Text(
+                        text = goal.memo,
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // 진행률 바
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                    color = Color(0xFFB2D4BD),
+                    trackColor = Color.LightGray.copy(alpha = 0.5f),
+                )
+            }
         },
         leadingContent = {
-            // 프로필 이미지
             Box(
                 modifier = Modifier
                     .size(25.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFB2D4BD))
+                    .background(if(goal.isDone) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary)
             )
         },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // 현재 진행 상황 텍스트
                 Text(
-                    "진행 중",
-                    fontSize = 12.sp,
+                    text = "${goal.currentSteps} / ${goal.targetSteps}",
+                    fontSize = 11.sp,
                     color = Color.Gray,
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                    modifier = Modifier.padding(horizontal = 4.dp)
                 )
-                IconButton(onClick = { /* 삭제 */ }) {
-                    Icon(Icons.Default.DeleteOutline, contentDescription = "삭제", tint = Color.Gray)
+                // 삭제 버튼
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteOutline,
+                        contentDescription = "삭제",
+                        tint = Color.Gray
+                    )
                 }
             }
         },

@@ -58,5 +58,40 @@ interface GoalDao {
     @Query("UPDATE goals SET isDone = 1 WHERE id = :goalId")
     suspend fun markGoalCompleted(goalId: Int)
 
+    // 오늘 날짜에 해당하고, 아직 완료되지 않은 모든 목표의 걸음 수 증가
+    @Query("""
+        UPDATE goals 
+        SET currentSteps = currentSteps + :steps 
+        WHERE :today BETWEEN startDate AND endDate 
+        AND isDone = 0
+    """)
+    suspend fun incrementStepsForActiveGoals(steps: Int, today: String)
+
+    // 목표 걸음 수를 달성한 목표들을 '완료(isDone=1)' 처리
+    @Query("""
+        UPDATE goals 
+        SET isDone = 1 
+        WHERE currentSteps >= targetSteps 
+        AND isDone = 0
+    """)
+    suspend fun checkAndMarkCompletedGoals()
+
+    // remoteId를 가진 데이터가 몇 개인지 반환 (0이면 없는 것)
+    @Query("SELECT COUNT(*) FROM goals WHERE remoteId = :remoteId")
+    suspend fun checkIfGoalExists(remoteId: String): Int
+
+    @Query("SELECT * FROM goals WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun getGoalByRemoteId(remoteId: String): GoalEntity?
+
+    @Query("SELECT id FROM goals WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun getGoalIdByRemoteId(remoteId: String): Int?
+
+    @Query("""
+    SELECT * FROM goals
+    WHERE :today BETWEEN startDate AND endDate 
+    AND isDone = 0
+    """)
+    suspend fun getActiveGoalsOnce(today: String): List<GoalEntity>
+
 //    fun getCompletedTodos(): Flow<List<GoalEntity>>
 }

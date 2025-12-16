@@ -70,7 +70,8 @@ fun NavGraph(navController: NavHostController,modifier: Modifier = Modifier) {
                     onBack = { navController.popBackStack() },
                     onAlarmClick = {navController.navigate(Routes.NOTIFICATION)},
                     onMenuClick = {/*드로어 열림/닫힘 제어를 받아올 함수*/},
-                    onRankingBtnClick = {navController.navigate(Routes.RANK)}
+                    onRankingBtnClick = {navController.navigate(Routes.RANK)},
+                    onGoToGoalsClick = { navController.navigate(Routes.GOALS) }
                 )
             } else
                 LoginScreen(authViewModel, navController)
@@ -124,17 +125,20 @@ fun NavGraph(navController: NavHostController,modifier: Modifier = Modifier) {
                 onBack = { navController.popBackStack() },
                 onAlarmClick = {navController.navigate(Routes.NOTIFICATION)},
                 onMenuClick = {/*드로어 열림/닫힘 제어를 받아올 함수*/},
-                onRankingBtnClick = {navController.navigate(Routes.RANK)}
+                onRankingBtnClick = {navController.navigate(Routes.RANK)},
+                onGoToGoalsClick = { navController.navigate(Routes.GOALS) }
             )
         }
 
         // 목표
         composable(Routes.GOALS) {
             GoalScreen(
-                goalViewModel, navController,
+                viewModel = goalViewModel,
+                stepViewModel = stepViewModel,
+                navController = navController,
                 onBack = { navController.popBackStack() },
-                onAlarmClick = {navController.navigate(Routes.NOTIFICATION)},
-                onMenuClick = {/*드로어 열림/닫힘 제어를 받아올 함수*/},
+                onAlarmClick = { navController.navigate(Routes.NOTIFICATION) },
+                onMenuClick = {/*드로어 열림/닫힘 제어를 받아올 함수*/ },
                 onAddGoalClick = { dateString ->
                     navController.navigate("add_goal_screen?date=$dateString")
                 }

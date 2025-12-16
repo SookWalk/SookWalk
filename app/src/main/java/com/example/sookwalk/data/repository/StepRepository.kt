@@ -6,13 +6,11 @@ import com.example.sookwalk.data.enums.Department
 import com.example.sookwalk.data.local.StepCounterDataStore
 import com.example.sookwalk.data.local.dao.StepDao
 import com.example.sookwalk.data.local.entity.steps.DailyStepEntity
-import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.firestore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
@@ -128,4 +126,41 @@ class StepRepository @Inject constructor(
         }.await()
     }
 
+    suspend fun syncStepsFromFirebase() {
+        val uid = auth.currentUser?.uid ?: return
+
+        try {
+            // 1. 일별 걸음 수(Daily Steps) 복구
+            val snapshot = db.collection("users")
+                .document(uid)
+                .collection("dailySteps")
+                .get()
+                .await()
+
+            if (!snapshot.isEmpty) {
+                snapshot.documents.forEach { doc ->
+                    val date = doc.id // 문서 ID가 날짜 (yyyy-MM-dd)
+                    val remoteSteps = doc.getLong("steps")?.toInt() ?: 0
+
+                    val localSteps = stepDao.getSteps(date) ?: 0
+
+                    val finalSteps = maxOf(localSteps, remoteSteps)
+
+                    stepDao.saveSteps(DailyStepEntity(date, finalSteps))
+                }
+            }
+
+            // 2. 총 누적 걸음 수(Total Steps) 복구
+            val userDoc = db.collection("users").document(uid).get().await()
+            val remoteTotal = userDoc.getLong("totalSteps")?.toInt() ?: 0
+
+            val localTotal = StepCounterDataStore.readTotalSteps(context)
+            val finalTotal = maxOf(localTotal, remoteTotal)
+
+            StepCounterDataStore.saveTotalSteps(context, remoteTotal)
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

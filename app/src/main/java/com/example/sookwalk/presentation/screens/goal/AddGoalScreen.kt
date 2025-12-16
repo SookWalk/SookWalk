@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -37,19 +38,32 @@ fun AddGoalScreen(
     initialDate: String,
     goalId: Int,
 ) {
-    // 1. 상태 호이스팅 (모든 데이터는 여기서 관리)
-    var steps by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
-    // initialDate가 있으면 startDate 초기값으로 설정
-    var startDate by remember { mutableStateOf(if (initialDate.isNotEmpty()) initialDate else "") }
-    var endDate by remember { mutableStateOf("") }
+    // 1. 화면 진입 시 초기화
+    LaunchedEffect(Unit) {
+        viewModel.initInputState(initialDate)
+    }
 
-    var memo by remember { mutableStateOf("") }
+    // 2. ViewModel 상태 구독
+    val stepsStr by viewModel.inputStepsStr.collectAsState()
+    val startDateMillis by viewModel.inputStartDate.collectAsState()
+    val endDateMillis by viewModel.inputEndDate.collectAsState()
+    val memo by viewModel.inputMemo.collectAsState()
+
+    // 3. 날짜 선택 다이얼로그 상태
+    var showStartPicker by remember { mutableStateOf(false) }
+    var showEndPicker by remember { mutableStateOf(false) }
+
+    // 날짜 포매터 (Millis -> UI String)
+    val dateFormatter = java.text.SimpleDateFormat("MM/dd/yyyy", java.util.Locale.getDefault())
+    val startDateStr = startDateMillis?.let { dateFormatter.format(java.util.Date(it)) } ?: ""
+    val endDateStr = endDateMillis?.let { dateFormatter.format(java.util.Date(it)) } ?: ""
 
     Scaffold(
         topBar = {
             TopBar(
-                screenName = "25.10.31", // 하드 코딩
+                screenName = startDateStr.ifEmpty { "목표 생성" }, // 하드 코딩
                 onBack = onBack,
                 onMenuClick = onMenuClick,
                 onAlarmClick = onAlarmClick
@@ -74,41 +88,104 @@ fun AddGoalScreen(
 
             // 1. 걸음 수 (데이터와 함수를 넘겨줌)
             StepsInputSection(
-                steps = steps,
-                onStepsChanged = { steps = it }
+                steps = stepsStr,
+                onStepsChanged = { viewModel.setSteps(it) }
             )
             Spacer(modifier = Modifier.height(24.dp))
 
             // 2. 날짜 지정
             DateSelectionSection(
-                startDate = startDate,
-                endDate = endDate,
-                onStartDateClick = { /* 날짜 선택 다이얼로그 띄우기 */ },
-                onEndDateClick = { /* 날짜 선택 다이얼로그 띄우기 */ },
-                onDurationSelected = { duration ->
-                    // "하루", "일주일" 칩 선택 시 endDate 자동 계산 로직
-                    if (duration == "하루") endDate = startDate
-                    // "일주일" 등의 로직은 날짜 계산 라이브러리 활용 필요
-                }
+                startDate = startDateStr,
+                endDate = endDateStr,
+                onStartDateClick = { showStartPicker = true },
+                onEndDateClick = { showEndPicker = true },
+                onDurationSelected = { duration -> viewModel.setDuration(duration) }
             )
             Spacer(modifier = Modifier.height(24.dp))
 
             // 3. 메모
             MemoSection(
                 memo = memo,
-                onMemoChanged = { memo = it }
+                onMemoChanged = { viewModel.setMemo(it) }
             )
             Spacer(modifier = Modifier.height(40.dp))
 
             // 4. 작성 완료 버튼
             CompletedButton(
                 onClick = {
-                    // 여기서 ViewModel에 저장 요청
-                    // ex) viewModel.saveGoal(steps, startDate, endDate, memo)
-                    navController.popBackStack() // 저장 후 뒤로가기
+                    viewModel.saveGoal(context) {
+                        // onSuccess: 저장이 완벽하게 성공했을 때만 실행됨
+                        navController.popBackStack()
+                    }
                 }
             )
+
             Spacer(modifier = Modifier.height(16.dp))
+
+        }
+
+        if (showStartPicker) {
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = startDateMillis ?: System.currentTimeMillis()
+            )
+            DatePickerDialog(
+                onDismissRequest = { showStartPicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.setStartDate(datePickerState.selectedDateMillis)
+                        showStartPicker = false
+                    }) {
+                        Text("확인", fontWeight = FontWeight.Bold, color = Color.Gray)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showStartPicker = false }) {
+                        Text("취소", color = Color.Gray)
+                    }
+                }
+            ) {
+                DatePicker(
+                    state = datePickerState,
+                    colors = DatePickerDefaults.colors(
+                        selectedDayContainerColor = Color.Gray,
+                        selectedDayContentColor = Color.White,
+                        todayDateBorderColor = Color.Gray,
+                        todayContentColor = Color.Gray
+                    )
+                )
+            }
+        }
+
+        if (showEndPicker) {
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = endDateMillis ?: startDateMillis ?: System.currentTimeMillis()
+            )
+            DatePickerDialog(
+                onDismissRequest = { showEndPicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.setEndDate(datePickerState.selectedDateMillis)
+                        showEndPicker = false
+                    }) {
+                        Text("확인", fontWeight = FontWeight.Bold, color = Color.Gray)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showEndPicker = false }) {
+                        Text("취소", color = Color.Gray)
+                    }
+                }
+            ) {
+                DatePicker(
+                    state = datePickerState,
+                    colors = DatePickerDefaults.colors(
+                        selectedDayContainerColor = Color.Gray,
+                        selectedDayContentColor = Color.White,
+                        todayDateBorderColor = Color.Gray,
+                        todayContentColor = Color.Gray
+                    )
+                )
+            }
         }
     }
 }
@@ -155,9 +232,7 @@ fun StepsInputSection(
                 selected = (selectedChip == chipText),
                 onClick = {
                     selectedChip = if (selectedChip == chipText) null else chipText
-                    // [핵심] 칩을 누르면 입력창 값도 자동으로 바뀜 (예: "3000보" -> "3000")
                     if (selectedChip != null) {
-                        // "3000보"에서 숫자만 추출해서 전달
                         onStepsChanged(chipText.replace("보", ""))
                     }
                 },
@@ -180,8 +255,6 @@ fun DateSelectionSection(
     onEndDateClick: () -> Unit,
     onDurationSelected: (String) -> Unit
 ) {
-    var startDate by remember { mutableStateOf("") }
-    var endDate by remember { mutableStateOf("") }
     val durationOptions = listOf("하루", "일주일", "한 달")
     var selectedDuration by remember { mutableStateOf<String?>(null) }
 
@@ -196,45 +269,57 @@ fun DateSelectionSection(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        OutlinedTextField(
-            value = startDate,
-            onValueChange = {}, // 읽기 전용이라 비워둠
-            label = { Text("mm/dd/yyyy") },
-            readOnly = true, // 직접 입력 대신 DatePicker로 선택
-            enabled = false,
-            modifier = Modifier
-                .weight(1f)
-                .clickable { onStartDateClick() },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Gray,
-                unfocusedBorderColor = Color.Gray,
-                cursorColor = Color.Gray,
-                focusedLabelColor = Color.Gray,
-                unfocusedLabelColor = Color.Gray
-            ),
-        )
+        Box(modifier = Modifier.weight(1f)) {
+            OutlinedTextField(
+                value = startDate,
+                onValueChange = {},
+                label = { Text("mm/dd/yyyy") },
+                readOnly = true,
+                enabled = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Gray,
+                    unfocusedBorderColor = Color.Gray,
+                    cursorColor = Color.Gray,
+                    focusedLabelColor = Color.Gray,
+                    unfocusedLabelColor = Color.Gray
+                ),
+            )
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable { onStartDateClick() }
+            )
+        }
+
         Text(
             " ~ ",
             modifier = Modifier.padding(horizontal = 8.dp),
             color = MaterialTheme.colorScheme.onBackground
         )
-        OutlinedTextField(
-            value = endDate,
-            onValueChange = {},
-            label = { Text("mm/dd/yyyy") },
-            readOnly = true, // 직접 입력 대신 DatePicker로 선택
-            enabled = false,
-            modifier = Modifier
-                .weight(1f)
-                .clickable { onEndDateClick() },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Gray,
-                unfocusedBorderColor = Color.Gray,
-                cursorColor = Color.Gray,
-                focusedLabelColor = Color.Gray,
-                unfocusedLabelColor = Color.Gray
-            ),
-        )
+
+        Box(modifier = Modifier.weight(1f)) {
+            OutlinedTextField(
+                value = endDate,
+                onValueChange = {},
+                label = { Text("mm/dd/yyyy") },
+                readOnly = true,
+                enabled = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Gray,
+                    unfocusedBorderColor = Color.Gray,
+                    cursorColor = Color.Gray,
+                    focusedLabelColor = Color.Gray,
+                    unfocusedLabelColor = Color.Gray
+                ),
+            )
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable { onEndDateClick() }
+            )
+        }
     }
     Spacer(modifier = Modifier.height(16.dp))
     Row(
@@ -246,7 +331,6 @@ fun DateSelectionSection(
                 selected = (selectedDuration == durationText),
                 onClick = {
                     selectedDuration = if (selectedDuration == durationText) null else durationText
-                    // 부모에게 어떤 기간이 선택됐는지 알림 (부모가 endDate 계산)
                     if (selectedDuration != null) {
                         onDurationSelected(durationText)
                     }
@@ -267,8 +351,6 @@ fun MemoSection(
     memo: String,
     onMemoChanged: (String) -> Unit
 ) {
-    var memoText by remember { mutableStateOf("") }
-
     Text(
         "메모",
         fontSize = 18.sp,

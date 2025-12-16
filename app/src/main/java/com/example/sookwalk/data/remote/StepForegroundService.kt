@@ -13,6 +13,7 @@ import android.hardware.SensorManager
 import android.os.IBinder
 import kotlinx.coroutines.launch
 import android.app.Service
+import com.example.sookwalk.data.repository.GoalRepository
 import com.example.sookwalk.data.repository.StepRepository
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
@@ -27,7 +28,10 @@ import java.time.LocalDate
 class StepForegroundService : Service(), SensorEventListener {
 
     @Inject
-    lateinit var repository: StepRepository
+    lateinit var stepRepository: StepRepository
+
+    @Inject
+    lateinit var goalRepository: GoalRepository
 
     private lateinit var sensorManager: SensorManager
     private var stepCounter: Sensor? = null
@@ -38,13 +42,15 @@ class StepForegroundService : Service(), SensorEventListener {
 
     private var lastUploadedTodaySteps: Int = 0
 
+    private var isUploading = false
+
     override fun onCreate() {
         super.onCreate()
         startForegroundService()
         initSensor()
 
         serviceScope.launch {
-            lastCounterInMemory = repository.getLastCounter()
+            lastCounterInMemory = stepRepository.getLastCounter()
         }
     }
 
@@ -67,13 +73,13 @@ class StepForegroundService : Service(), SensorEventListener {
 
             if (last == null) {
                 lastCounterInMemory = current
-                repository.saveLastCounter(current)
+                stepRepository.saveLastCounter(current)
                 return@launch
             }
 
             if (current < last) {
                 lastCounterInMemory = current
-                repository.saveLastCounter(current)
+                stepRepository.saveLastCounter(current)
                 return@launch
             }
 
@@ -83,17 +89,31 @@ class StepForegroundService : Service(), SensorEventListener {
             }
 
             lastCounterInMemory = current
-            repository.saveLastCounter(current)
+            stepRepository.saveLastCounter(current)
 
-            val todayAddedTotal = repository.addStepsForToday(diff)
-            val totalSteps = repository.addToTotal(diff)
+            val todayAddedTotal = stepRepository.addStepsForToday(diff)
+            val totalSteps = stepRepository.addToTotal(diff)
 
-            if (todayAddedTotal - lastUploadedTodaySteps >= 100) {
-                val today = LocalDate.now().toString()
-                repository.uploadDailySteps(today, todayAddedTotal)
-                repository.uploadTotalSteps(totalSteps)
-                repository.addStepsToCollegeAndDepartment(todayAddedTotal)
-                lastUploadedTodaySteps = todayAddedTotal
+            goalRepository.updateActiveGoalsProgress(diff)
+
+            if (!isUploading && (todayAddedTotal - lastUploadedTodaySteps >= 100)) {
+                isUploading = true // 업로드 시작 표시 (잠금)
+
+                try {
+                    // 마지막 업로드 기준점 미리 갱신 (중복 진입 방지)
+                    lastUploadedTodaySteps = todayAddedTotal
+
+                    // 파이어베이스 업로드 요청
+                    stepRepository.uploadDailySteps(LocalDate.now().toString(), todayAddedTotal)
+                    stepRepository.uploadTotalSteps(totalSteps)
+                    stepRepository.addStepsToCollegeAndDepartment(todayAddedTotal)
+
+                    android.util.Log.d("StepService", "✅ ${todayAddedTotal}보 업로드 완료")
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    isUploading = false // 업로드 끝남 표시 (잠금 해제)
+                }
             }
         }
     }
@@ -124,6 +144,23 @@ class StepForegroundService : Service(), SensorEventListener {
 
     override fun onDestroy() {
         super.onDestroy()
+
+        serviceScope.launch {
+            try {
+                val today = LocalDate.now().toString()
+                val finalSteps = stepRepository.getStepsOfDate(today) // 로컬의 최종 걸음 수
+                val finalTotal = stepRepository.getTotalSteps() // 로컬의 최종 누적 걸음 수
+
+                if (finalSteps > 0) {
+                    stepRepository.uploadDailySteps(today, finalSteps)
+                    stepRepository.uploadTotalSteps(finalTotal)
+                    android.util.Log.d("FIREBASE_FINAL", "✅ 서비스 종료 전 최종 저장 완료: $finalSteps 보")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("FIREBASE_FINAL", "❌ 최종 저장 실패: ${e.message}")
+            }
+        }
+
         sensorManager.unregisterListener(this)
         serviceScope.cancel()
     }
