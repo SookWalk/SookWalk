@@ -100,34 +100,32 @@ class AuthRepository @Inject constructor(
                 )
 
                 // Firestore에 사용자 UID를 문서 ID로 사용
-                db.collection("users").document(uid)
-                    .set(user)
-                    .await()
+                val userRef = db.collection("users").document(uid)
+                userRef.set(user).await()
                 Log.d("SignUp", "Firestore에 회원정보 저장 성공")
 
-                // 로그인 아이디만 있는 컬렉션에 아이디 저장
-                db.collection("loginIds").document(loginId)
-                    .set(
-                        hashMapOf(
-                            "loginId" to loginId
-                        )
-                    )
+                // 하위 컬렉션 stas 초기화
+                val statsRef = userRef.collection("stats")
 
-                // 닉네임만 있는 컬렉션에 아이디 저장
-                db.collection("nicknames").document(nickname)
-                    .set(
-                        hashMapOf(
-                            "nickname" to nickname
-                        )
-                    )
+                // 초기 데이터 맵 (원하는 초기값 설정)
+                val initialData = hashMapOf(
+                    "total" to 0,
+                    "date" to null
+                )
 
-                // 이메일만 있는 컬렉션에 이메일 저장
-                db.collection("emails").document(email)
-                    .set(
-                        hashMapOf(
-                            "email" to email
-                        )
-                    )
+                // challenge 문서 초기화
+                statsRef.document("challenge").set(initialData).await()
+                // step 문서 초기화
+                statsRef.document("step").set(initialData).await()
+                // place 문서 초기화
+                statsRef.document("place").set(initialData).await()
+                // rank 문서 초기화
+                statsRef.document("rank").set(initialData).await()
+
+                // 2. 중복 체크용 컬렉션들에 저장
+                db.collection("loginIds").document(loginId).set(hashMapOf("loginId" to loginId))
+                db.collection("nicknames").document(nickname).set(hashMapOf("nickname" to nickname))
+                db.collection("emails").document(email).set(hashMapOf("email" to email))
 
 
                 // 로컬 DB에 저장
