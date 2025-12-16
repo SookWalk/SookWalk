@@ -23,6 +23,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,7 +74,43 @@ fun MyPageScreen(
     // ViewModel의 StateFlow를 구독하여 Room DB의 사용자 정보를 실시간으로 받습니다.
     val currentUser by viewModel.currentUser.collectAsState()
 
+    // 스낵바
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val myPageEditSuccess =
+        navController.currentBackStackEntry
+            ?.savedStateHandle
+            ?.get<Boolean>("myPageEditSuccess")
+
+
+    LaunchedEffect(myPageEditSuccess) {
+        if (myPageEditSuccess == true) {
+            snackbarHostState.showSnackbar(
+                message = "마이페이지 정보가 수정되었습니다",
+                duration = SnackbarDuration.Short
+            )
+
+            navController.currentBackStackEntry
+                ?.savedStateHandle
+                ?.remove<Boolean>("myPageEditSuccess")
+        }
+    }
+
+
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState
+            ) { data ->
+                Snackbar(
+                    containerColor = Color.Black.copy(alpha = 0.8f),
+                    contentColor = Color.White,
+                    snackbarData = data
+                )
+            }
+
+        },
+
         topBar = {
             TopBar(
                 screenName = "마이페이지",
