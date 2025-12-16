@@ -79,5 +79,15 @@ enum class Department (
 
     MEDIA_SCIENCE("media_science", "미디어학전공", College.MEDIA),
 
-    GLOBAL_CONVERGENCE("global_convergence", "글로벌융합학부", College.GLOBAL_CONVERGENCE)
+    GLOBAL_CONVERGENCE("global_convergence", "글로벌융합학부", College.GLOBAL_CONVERGENCE);
+
+    companion object {
+        fun fromId(id: String): Department =
+            values().find { it.id == id }
+                ?: throw IllegalArgumentException("Unknown dept id: $id")
+    }
+
+    private fun deptNameFromId(id: String): String {
+        return Department.entries.firstOrNull { it.id == id }?.displayName ?: id
+    }
 }
