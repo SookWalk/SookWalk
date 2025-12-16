@@ -2,15 +2,16 @@ package com.example.sookwalk.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
@@ -19,7 +20,6 @@ import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import com.example.sookwalk.R
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,13 +32,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.sookwalk.R
 import com.example.sookwalk.navigation.Routes
 import com.example.sookwalk.presentation.viewmodel.UserViewModel
 
 @Composable
 fun DrawerContent(
     userViewModel: UserViewModel,
-    navController: NavController
+    navController: NavController,
+    onCloseDrawer: () -> Unit
 ) {
 
     // UserViewModel의 currentUser StateFLow 구독
@@ -49,7 +51,7 @@ fun DrawerContent(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(16.dp)
+            .padding(25.dp)
     ) {
         Column(
             modifier = Modifier
@@ -67,7 +69,6 @@ fun DrawerContent(
                         .padding(vertical = 16.dp)
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // 프로필 사진
                     AsyncImage(
@@ -80,7 +81,7 @@ fun DrawerContent(
                             .clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
-
+                    Spacer(modifier = Modifier.width(16.dp))
                     // 닉네임
                     Text(
                         text = currentUser?.nickname ?: "사용자",
@@ -99,16 +100,16 @@ fun DrawerContent(
                         .padding(vertical = 32.dp)
                         .fillMaxWidth()
                         .clickable {
+                            onCloseDrawer()
                             // 마이페이지로 이동
                             navController.navigate(Routes.MYPAGE)
                         },
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Icon(
                         imageVector = Icons.Default.Person, contentDescription = "profile"
                     )
-
+                    Spacer(modifier = Modifier.width(16.dp))
                     Text(
                         "마이 페이지",
                     )
@@ -120,15 +121,15 @@ fun DrawerContent(
                         .fillMaxWidth()
                         .clickable {
                             // 뱃지 페이지로 이동
+                            onCloseDrawer()
                             navController.navigate(Routes.BADGES)
                         },
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Icon(
                         imageVector = Icons.Default.Stars, contentDescription = "badge"
                     )
-
+                    Spacer(modifier = Modifier.width(16.dp))
                     Text("뱃지")
                 }
             }
@@ -140,15 +141,15 @@ fun DrawerContent(
                     .fillMaxWidth()
                     .clickable {
                         /* 환경 설정 페이지로 이동*/
+                        onCloseDrawer()
                         navController.navigate(Routes.SETTINGS)
                     },
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings, contentDescription = "settings"
                 )
-
+                Spacer(modifier = Modifier.width(16.dp))
                 Text("설정")
             }
         }

@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.sookwalk.presentation.viewmodel.UserViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,7 +24,7 @@ fun AppRightDrawer(
     userViewModel: UserViewModel,
     navController: NavController,
     scope: CoroutineScope,
-    drawerWidth: Dp = 280.dp,
+    drawerWidth: Dp = 220.dp,
     content: @Composable () -> Unit
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -37,8 +38,12 @@ fun AppRightDrawer(
                     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                         DrawerContent(
                             userViewModel = userViewModel,
-                            navController = navController
-                            // 필요하면 onCloseDrawer도 추가해서 여기서 close 호출
+                            navController = navController,
+                            onCloseDrawer = {
+                                scope.launch {
+                                    drawerState.close()
+                                }
+                            }
                         )
                     }
                 }
