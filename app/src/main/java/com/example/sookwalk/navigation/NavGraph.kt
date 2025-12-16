@@ -267,16 +267,26 @@ fun NavGraph(navController: NavHostController,modifier: Modifier = Modifier) {
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date") ?: ""
             val goalId = backStackEntry.arguments?.getInt("goalId") ?: -1
-
-            AddGoalScreen(
-                viewModel = goalViewModel,
+            AppRightDrawer(
+                drawerState = drawerState,
+                userViewModel = userViewModel,
                 navController = navController,
-                onBack = { navController.popBackStack() },
-                onAlarmClick = {navController.navigate(Routes.NOTIFICATION)},
-                onMenuClick = {/*드로어 열림/닫힘 제어를 받아올 함수*/},
-                initialDate = date, // 전달받은 날짜
-                goalId = goalId,
-            )
+                scope = scope
+            ) {
+                AddGoalScreen(
+                    viewModel = goalViewModel,
+                    navController = navController,
+                    onBack = { navController.popBackStack() },
+                    onAlarmClick = { navController.navigate(Routes.NOTIFICATION) },
+                    onMenuClick = {
+                        scope.launch {
+                            if (drawerState.isClosed) drawerState.open() else drawerState.close()
+                        }
+                    },
+                    initialDate = date, // 전달받은 날짜
+                    goalId = goalId,
+                )
+            }
         }
     }
 }
