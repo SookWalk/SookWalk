@@ -2,6 +2,7 @@ package com.example.sookwalk.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.sookwalk.data.local.entity.notification.NotificationEntity
 import kotlinx.coroutines.flow.Flow
@@ -10,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 interface NotificationDao {
     @Insert
     suspend fun insert(notification: NotificationEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(list: List<NotificationEntity>)
 
     @Query("SELECT * FROM notifications ORDER BY createdAt DESC")
     fun getAll(): Flow<List<NotificationEntity>>

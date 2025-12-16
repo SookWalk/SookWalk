@@ -11,13 +11,4 @@ import javax.inject.Inject
 
 @HiltAndroidApp
 class MyApp: Application(){
-    @Inject lateinit var notificationRepository: NotificationRepository
-
-    override fun onCreate() {
-        super.onCreate()
-
-        CoroutineScope(Dispatchers.IO).launch {
-            notificationRepository.preloadIfEmpty(NotificationSampleData.samples())
-        }
-    }
 }

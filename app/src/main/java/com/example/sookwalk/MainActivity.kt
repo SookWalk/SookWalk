@@ -43,7 +43,6 @@ class MainActivity : ComponentActivity() {
         if (!Places.isInitialized()) {
             Places.initializeWithNewPlacesApiEnabled(applicationContext, apiKey)
         }
-        val placesClient = Places.createClient(this)
 
         enableEdgeToEdge()
         setContent {

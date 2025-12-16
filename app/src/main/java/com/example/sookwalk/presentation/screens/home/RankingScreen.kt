@@ -140,12 +140,16 @@ fun RankingCategory(
         onClick  = onClick,
         shape = RoundedCornerShape(7.dp),
         colors = CardDefaults
-            .cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            .cardColors(
+                containerColor = if (selected) MaterialTheme.colorScheme.secondary
+                else MaterialTheme.colorScheme.surface
+            ),
         modifier = Modifier.padding(10.dp)
     ){
         Text(
             text = category,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            color = MaterialTheme.colorScheme.onPrimary
         )
     }
 }

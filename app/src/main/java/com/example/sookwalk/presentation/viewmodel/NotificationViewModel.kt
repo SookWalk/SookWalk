@@ -32,4 +32,10 @@ class NotificationViewModel @Inject constructor(
             repository.clearAll()
         }
     }
+
+    init {
+        viewModelScope.launch {
+            repository.preloadIfEmpty()
+        }
+    }
 }
