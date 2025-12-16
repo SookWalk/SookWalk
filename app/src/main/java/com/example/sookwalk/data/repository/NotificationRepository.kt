@@ -10,6 +10,15 @@ class NotificationRepository @Inject constructor(
 ) {
     val notifications: Flow<List<NotificationEntity>> = dao.getAll()
 
+    fun observeNotifications(): Flow<List<NotificationEntity>> =
+        dao.getAll()
+
+    suspend fun preloadIfEmpty(samples: List<NotificationEntity>) {
+        if (dao.count() == 0) {
+            samples.forEach { dao.insert(it) } // or insertAll 만들기
+        }
+    }
+
     suspend fun saveNotification(notification: NotificationEntity): Long {
         return dao.insert(notification)
     }

@@ -92,6 +92,7 @@ class StepForegroundService : Service(), SensorEventListener {
                 val today = LocalDate.now().toString()
                 repository.uploadDailySteps(today, todayAddedTotal)
                 repository.uploadTotalSteps(totalSteps)
+                repository.addStepsToCollegeAndDepartment(todayAddedTotal)
                 lastUploadedTodaySteps = todayAddedTotal
             }
         }

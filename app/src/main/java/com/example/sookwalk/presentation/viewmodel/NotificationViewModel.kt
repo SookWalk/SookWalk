@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sookwalk.data.local.entity.notification.NotificationEntity
 import com.example.sookwalk.data.repository.NotificationRepository
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +17,7 @@ class NotificationViewModel @Inject constructor(
     private val repository: NotificationRepository
 ): ViewModel(){
     val notificationList: StateFlow<List<NotificationEntity>> =
-        repository.notifications.stateIn(
+        repository.observeNotifications().stateIn(
             viewModelScope, SharingStarted.Lazily, emptyList()
         )
 

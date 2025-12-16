@@ -288,7 +288,7 @@ fun WalkHomeCard(goalWalkCount: Int, walkCount: Int){
                     fontSize = 14.sp
                 )
             }
-            WalkCountCard()
+            WalkCountCard(2000, 1000)
         }
     }
 }

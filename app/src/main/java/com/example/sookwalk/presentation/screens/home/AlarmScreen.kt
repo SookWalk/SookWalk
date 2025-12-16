@@ -68,7 +68,7 @@ fun AlarmScreen(
     }
 }
 
-data class Alarm (val title: String, val description: String, val date: LocalDateTime, var isRead: Boolean)
+
 
 @Composable
 fun AlarmCard(notificationEntity: NotificationEntity){

@@ -398,7 +398,9 @@ fun MyPageEditScreen(
                                 if (isNicknameAvailable ?: false || isChangedMajor) {
                                     userViewModel.updateNicknameAndMajor(nickname, major)
                                 }
-                                /* 뒤로 가기 로직 */
+
+                                // 뒤로 가기 직전에, 이전 화면(MyPageScreen)의 SavedStateHandle에 'myPageEditSuccess' 값을 true로 설정
+                                navController.previousBackStackEntry?.savedStateHandle?.set("myPageEditSuccess", true)
                                 navController.popBackStack()
                             },
                             shape = RoundedCornerShape(28),

@@ -19,4 +19,7 @@ interface NotificationDao {
 
     @Query("DELETE FROM notifications")
     suspend fun clearAll()
+
+    @Query("SELECT COUNT(*) FROM notifications")
+    suspend fun count(): Int
 }

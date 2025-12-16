@@ -15,6 +15,7 @@ import com.example.sookwalk.data.repository.NotificationRepository
 import com.example.sookwalk.data.repository.UserRepository
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,6 +28,11 @@ import kotlin.jvm.java
 @Module // 이 클래스가 Hilt에 의존성을 제공함을 알림
 @InstallIn(SingletonComponent::class) // 앱 전역에서 사용할 수 있게 함
 object AppModule {
+
+    @Provides
+    @Singleton
+    fun provideFirestore(): FirebaseFirestore =
+        FirebaseFirestore.getInstance()
 
     // Room DB 인스턴스 제공
     @Provides
