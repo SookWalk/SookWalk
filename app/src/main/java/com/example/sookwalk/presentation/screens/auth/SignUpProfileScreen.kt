@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -107,6 +109,15 @@ fun SignUpProfileScreen(
     var major by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
 
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+
+    // 포커스가 잡히면 리스트를 펼침
+    LaunchedEffect(isFocused) {
+        if (isFocused) expanded = true
+    }
+
     // MajorViewModel의 상태를 수집
     val departments by majorViewModel.departments.collectAsState()
 
@@ -116,9 +127,12 @@ fun SignUpProfileScreen(
     }
 
     // 입력된 텍스트가 포함된 전공만 필터링
-    val filtered = remember(major) {
-        if (major.isBlank()) departments
-        else departments.filter { it.contains(major, ignoreCase = true) }
+    val filtered = remember(major, departments) {
+        if (major.isBlank()) {
+            departments // 검색어가 없으면 전체 리스트를 보여줌
+        } else {
+            departments.filter { it.contains(major, ignoreCase = true) }
+        }
     }
 
     Scaffold(
@@ -250,6 +264,7 @@ fun SignUpProfileScreen(
                                 major = it
                                 expanded = true
                             },
+                            interactionSource = interactionSource,
                             placeholder = { Text("소속 학부를 입력하세요") },
                             modifier = Modifier
                                 .fillMaxWidth(),
@@ -285,7 +300,7 @@ fun SignUpProfileScreen(
                                         if (startIndex >= 0 && major.isNotEmpty()) {
                                             val endIndex = startIndex + major.length
                                             append(dept.substring(0, startIndex))
-                                            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)) {
+                                            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
                                                 append(dept.substring(startIndex, endIndex))
                                             }
                                             append(dept.substring(endIndex))
