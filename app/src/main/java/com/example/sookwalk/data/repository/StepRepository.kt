@@ -157,10 +157,29 @@ class StepRepository @Inject constructor(
             val localTotal = StepCounterDataStore.readTotalSteps(context)
             val finalTotal = maxOf(localTotal, remoteTotal)
 
-            StepCounterDataStore.saveTotalSteps(context, remoteTotal)
+            StepCounterDataStore.saveTotalSteps(context, finalTotal)
 
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    suspend fun updateStepStats(date: String, total: Int) {
+        val uid = auth.currentUser?.uid ?: return
+        try {
+            val data = mapOf(
+                "total" to total,
+                "date" to FieldValue.serverTimestamp()
+            )
+
+            db.collection("users")
+                .document(uid)
+                .collection("stats")
+                .document("step")
+                .set(data, SetOptions.merge())
+                .await()
+        } catch (e: Exception) {
+            android.util.Log.e("StepRepo", "stats 업데이트 실패: ${e.message}")
         }
     }
 }
