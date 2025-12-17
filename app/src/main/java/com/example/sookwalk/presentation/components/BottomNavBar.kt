@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.sookwalk.navigation.BottomNavItem
 
@@ -38,18 +39,20 @@ fun BottomNavBar(navController: NavController) {
                 icon = { Icon(imageVector = item.icon, contentDescription = item.title, modifier = Modifier.size(26.dp)) },
                 label = { Text(text = item.title, style = MaterialTheme.typography.labelSmall) },
                 selected = currentRoute == item.route,
-                onClick = {
-                    navController.navigate(item.route) {
-                        // 백 스택에 동일한 목적지가 쌓이는 것을 방지
-                        navController.graph.startDestinationRoute?.let { route ->
-                            popUpTo(route) {
+                onClick = {val destinationRoute = item.route
+
+                    // 현재 노드가 이미 선택된 노드인지 확인 (선택 사항: 같은 버튼 반복 클릭 방지)
+                    if (currentRoute != destinationRoute) {
+                        navController.navigate(destinationRoute) {
+                            // 메인 화면(보통 홈) 하위의 모든 스택을 비워 메모리 누수와 뒤로가기 꼬임 방지
+                            popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
+                            // 같은 화면이 여러 개 쌓이지 않도록 설정
+                            launchSingleTop = true
+                            // 이전 상태 복원 (스크롤 위치 등)
+                            restoreState = false
                         }
-                        // 이미 선택된 아이템을 다시 선택했을 때, 화면을 새로 띄우지 않음
-                        launchSingleTop = true
-                        // 이전에 선택했던 아이템으로 돌아갈 때, 상태를 복원
-                        restoreState = true
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
