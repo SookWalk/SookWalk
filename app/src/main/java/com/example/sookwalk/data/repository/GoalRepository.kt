@@ -66,10 +66,7 @@ class GoalRepository @Inject constructor(
     }
 
     suspend fun deleteGoal(uid: String, goal: GoalEntity){
-        // Room 삭제
         dao.delete(goal)
-
-        // Firestore 삭제 (remoteId가 있을 때만)
         if (goal.remoteId.isNotEmpty()) {
             try {
                 col(uid).document(goal.remoteId).delete().await()
@@ -107,13 +104,11 @@ class GoalRepository @Inject constructor(
                         isDone = isDone
                     )
 
-                    val localGoal = dao.getGoalByRemoteId(remoteGoal.remoteId) // ★ DAO 필요 함수
+                    val localGoal = dao.getGoalByRemoteId(remoteGoal.remoteId)
 
                     val finalGoal = if (localGoal != null) {
                         val mergedSteps = maxOf(localGoal.currentSteps, remoteGoal.currentSteps)
-
                         val mergedIsDone = localGoal.isDone || remoteGoal.isDone
-
                         remoteGoal.copy(
                             currentSteps = mergedSteps,
                             isDone = mergedIsDone,
@@ -144,10 +139,7 @@ class GoalRepository @Inject constructor(
     }
 
     suspend fun updateGoalByMemo(uid: String, goal: GoalEntity, memo: String) {
-        // Room 업데이트
         dao.updateMemo(goal.id, memo)
-
-        // Firestore 업데이트
         if (goal.remoteId.isNotEmpty()) {
             try {
                 val updates = mapOf(
@@ -161,9 +153,9 @@ class GoalRepository @Inject constructor(
         }
     }
 
-    suspend fun updateActiveGoalsProgress(stepsDelta: Int) {
+    suspend fun updateActiveGoalsProgressLocal(stepsDelta: Int): Boolean {
         val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        val uid = auth.currentUser?.uid ?: return
+        val uid = auth.currentUser?.uid ?: return false
 
         val beforeGoals = dao.getTodayAllGoals(today)
         val unfinishedBefore = beforeGoals.filter { !it.isDone }.map { it.remoteId }.toSet()
@@ -198,13 +190,22 @@ class GoalRepository @Inject constructor(
             updateStatsChallengeCount(uid, newlyCompletedGoals.size)
         }
 
-        afterGoals.forEach { goal ->
+        return newlyCompletedGoals.isNotEmpty()
+    }
+
+    suspend fun syncActiveGoalsToFirebase() {
+        val uid = auth.currentUser?.uid ?: return
+        val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+
+        val currentGoals = dao.getTodayAllGoals(today)
+
+        currentGoals.forEach { goal ->
             updateGoalProgressOnFirebase(uid, goal)
         }
     }
 
     suspend fun updateGoalProgressOnFirebase(uid: String, goal: GoalEntity) {
-        if (goal.remoteId.isEmpty()) return // remoteId가 없으면 Firebase에 저장할 수 없음
+        if (goal.remoteId.isEmpty()) return
 
         try {
             val updates = mapOf(
