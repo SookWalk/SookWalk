@@ -99,8 +99,14 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
 
         // 마이 페이지
         composable(Routes.MYPAGE) {
-
-            MyPageScreen(userViewModel, navController)
+            AppRightDrawer(
+                drawerState = drawerState,
+                userViewModel = userViewModel,
+                navController = navController,
+                scope = scope
+            ) {
+                MyPageScreen(userViewModel, navController)
+            }
         }
 
         // 뱃지
@@ -254,7 +260,14 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
 
         // 마이페이지 수정
         composable(Routes.MYPAGE_EDIT) {
-            MyPageEditScreen(userViewModel, majorViewModel, navController)
+            AppRightDrawer(
+                drawerState = drawerState,
+                userViewModel = userViewModel,
+                navController = navController,
+                scope = scope
+            ) {
+                MyPageEditScreen(userViewModel, majorViewModel, navController)
+            }
         }
 
         // 목표 추가, 수정
