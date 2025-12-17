@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -267,18 +269,29 @@ fun SignUpProfileScreen(
                         // 아래쪽 고정 Dropdown Box
                         if (expanded && filtered.isNotEmpty()) {
 
-                            Column {
-                                filtered.forEach { dept ->
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 200.dp) // 최대 높이를 지정해야 스크롤이 작동함
+                                    .background(Color.White)
+                            ) {
+                                // import androidx.compose.foundation.lazy.items 확인 필수
+                                items(filtered.size) { index ->
+                                    val dept = filtered[index]
+
+                                    // 텍스트 하이라이트 로직
                                     val annotated = buildAnnotatedString {
                                         val startIndex = dept.indexOf(major, ignoreCase = true)
-                                        if (startIndex >= 0) {
+                                        if (startIndex >= 0 && major.isNotEmpty()) {
                                             val endIndex = startIndex + major.length
                                             append(dept.substring(0, startIndex))
-                                            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)) {
                                                 append(dept.substring(startIndex, endIndex))
                                             }
                                             append(dept.substring(endIndex))
-                                        } else append(dept)
+                                        } else {
+                                            append(dept)
+                                        }
                                     }
 
                                     Text(
@@ -289,7 +302,7 @@ fun SignUpProfileScreen(
                                                 major = dept
                                                 expanded = false
                                             }
-                                            .padding(vertical = 8.dp, horizontal = 12.dp),
+                                            .padding(vertical = 12.dp, horizontal = 16.dp),
                                         color = Color.Black
                                     )
                                 }
@@ -298,7 +311,6 @@ fun SignUpProfileScreen(
                     }
                 }
             }
-
         }
     }
 }
