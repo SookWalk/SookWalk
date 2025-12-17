@@ -88,10 +88,9 @@ interface GoalDao {
 
     @Query("""
     SELECT * FROM goals
-    WHERE :today BETWEEN startDate AND endDate 
-    AND isDone = 0
-    """)
-    suspend fun getActiveGoalsOnce(today: String): List<GoalEntity>
+    WHERE :today BETWEEN startDate AND endDate
+""")
+    suspend fun getTodayAllGoals(today: String): List<GoalEntity>
 
 //    fun getCompletedTodos(): Flow<List<GoalEntity>>
 }

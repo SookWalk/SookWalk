@@ -42,6 +42,8 @@ class StepForegroundService : Service(), SensorEventListener {
 
     private var lastUploadedTodaySteps: Int = 0
 
+    private var lastUploadTime: Long = 0L
+
     private var isUploading = false
 
     override fun onCreate() {
@@ -92,32 +94,38 @@ class StepForegroundService : Service(), SensorEventListener {
             stepRepository.saveLastCounter(current)
 
             val todayAddedTotal = stepRepository.addStepsForToday(diff)
-            val totalSteps = stepRepository.addToTotal(diff)
-
             goalRepository.updateActiveGoalsProgress(diff)
 
-            if (!isUploading && (todayAddedTotal - lastUploadedTodaySteps >= 100)) {
-                isUploading = true // 업로드 시작 표시 (잠금)
+            val currentTime = System.currentTimeMillis()
+            val stepDiff = todayAddedTotal - lastUploadedTodaySteps
+            val timeDiff = currentTime - lastUploadTime
 
+            if (!isUploading && (stepDiff >= 50 || (stepDiff > 0 && timeDiff >= 3 * 60 * 1000))) {
+                isUploading = true
                 try {
-                    // 마지막 업로드 기준점 미리 갱신 (중복 진입 방지)
-                    lastUploadedTodaySteps = todayAddedTotal
+                    // 업로드 전 기준점 업데이트
+                    val stepsToUpload = todayAddedTotal
+                    val totalToUpload = stepRepository.getTotalSteps()
 
-                    // 파이어베이스 업로드 요청
-                    stepRepository.uploadDailySteps(LocalDate.now().toString(), todayAddedTotal)
-                    stepRepository.uploadTotalSteps(totalSteps)
-                    stepRepository.addStepsToCollegeAndDepartment(todayAddedTotal)
+                    stepRepository.uploadDailySteps(LocalDate.now().toString(), stepsToUpload)
+                    stepRepository.uploadTotalSteps(totalToUpload)
 
-                    android.util.Log.d("StepService", "✅ ${todayAddedTotal}보 업로드 완료")
+                    // 랭킹은 '누적된 차이값'을 보냄 (중요!)
+                    stepRepository.addStepsToCollegeAndDepartment(stepDiff)
+
+                    // 기준점 갱신
+                    lastUploadedTodaySteps = stepsToUpload
+                    lastUploadTime = currentTime
+
+                    android.util.Log.d("StepService", "☁️ 최적화 동기화 완료: $stepsToUpload 보")
                 } catch (e: Exception) {
                     e.printStackTrace()
                 } finally {
-                    isUploading = false // 업로드 끝남 표시 (잠금 해제)
+                    isUploading = false
                 }
             }
         }
     }
-
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) { }
 
     @SuppressLint("ForegroundServiceType")

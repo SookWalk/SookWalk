@@ -6,7 +6,9 @@ import com.example.sookwalk.data.remote.dto.GoalDto
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import jakarta.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -152,19 +154,24 @@ class GoalRepository @Inject constructor(
 
     suspend fun updateActiveGoalsProgress(stepsDelta: Int) {
         val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val uid = auth.currentUser?.uid ?: return
+
+        val beforeGoals = dao.getTodayAllGoals(today)
+        val unfinishedBefore = beforeGoals.filter { !it.isDone }.map { it.remoteId }.toSet()
 
         dao.incrementStepsForActiveGoals(stepsDelta, today)
         dao.checkAndMarkCompletedGoals()
 
-        val uid = auth.currentUser?.uid // Firebase auth는 Repository에 주입받아야 합니다.
-        if (uid == null) return
+        val afterGoals = dao.getTodayAllGoals(today)
 
-        val updatedGoals = dao.getActiveGoalsOnce(today) // Room에서 업데이트된 목표 목록 가져오기
+        val newlyCompletedGoals = afterGoals.filter { it.isDone && unfinishedBefore.contains(it.remoteId) }
 
-        CoroutineScope(Dispatchers.IO).launch {
-            updatedGoals.forEach { goal ->
-                updateGoalProgressOnFirebase(uid, goal)
-            }
+        if (newlyCompletedGoals.isNotEmpty()) {
+            updateStatsChallengeCount(uid, newlyCompletedGoals.size)
+        }
+
+        afterGoals.forEach { goal ->
+            updateGoalProgressOnFirebase(uid, goal)
         }
     }
 
@@ -181,6 +188,27 @@ class GoalRepository @Inject constructor(
         } catch (e: Exception) {
             android.util.Log.e("FIREBASE_SYNC", "목표 진행률 업데이트 실패: ${e.message}")
             e.printStackTrace()
+        }
+    }
+
+    private fun statsCol() = db.collection("users").document(auth.currentUser?.uid ?: "").collection("stats")
+
+    private suspend fun updateStatsChallengeCount(uid: String, incrementValue: Int) {
+        try {
+            val statsDoc = db.collection("users")
+                .document(uid)
+                .collection("stats")
+                .document("challenge")
+
+            val data = mapOf(
+                "total" to FieldValue.increment(incrementValue.toLong()),
+                "date" to Timestamp.now()
+            )
+
+            statsDoc.set(data, SetOptions.merge()).await()
+            android.util.Log.d("GoalRepo", "✅ 누적 완수 개수 $incrementValue 증가 완료")
+        } catch (e: Exception) {
+            android.util.Log.e("GoalRepo", "❌ 누적 개수 반영 실패: ${e.message}")
         }
     }
 }
