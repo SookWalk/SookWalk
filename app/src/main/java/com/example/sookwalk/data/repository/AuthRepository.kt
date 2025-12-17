@@ -41,9 +41,22 @@ class AuthRepository @Inject constructor(
                 false
                 // 존재하면 이메일 가져오기
             } else {
-                val email = idInFirestore.documents.first().getString("email") ?: ""
-                // FirebaseAuth로 로그인 시도, 성공하면 user 객체 반환, 실패하면 예외 발생
+                val userDoc = idInFirestore.documents.first()
+                val email = userDoc.getString("email") ?: ""
+
+                // FirebaseAuth로 로그인 시도
                 auth.signInWithEmailAndPassword(email, password).await()
+                Log.d("LoginSuccess", "로그인 성공: ${auth.currentUser?.email}")
+
+                // 로그인 성공 시 Firestore 데이터를 UserEntity로 변환
+                val userEntity = userDoc.toObject(UserEntity::class.java)
+
+                if (userEntity != null) {
+                    // 로컬 Room DB에 저장 (동기화)
+                    dao.insert(userEntity)
+                    Log.d("LoginSuccess", "Firestore 데이터를 로컬 DB에 동기화 완료: ${userEntity.nickname}")
+                }
+
                 _isLoggedIn.value = true
                 true
             }
