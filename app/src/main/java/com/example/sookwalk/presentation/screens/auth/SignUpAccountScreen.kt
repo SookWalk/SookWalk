@@ -116,9 +116,9 @@ fun SignUpAccountScreen(
     var moveNextEnabled by remember { mutableStateOf(false) } // 다음 페이지 이동
 
     // 모든 요건을 만족하면 다음 페이지로 이동한다
-    // if (isLoginIdAvailable && isAuthencated && password == confirmPassword) {
+    if ( isLoginIdAvailable == true && password == confirmPassword && isAuthencated ) {
         moveNextEnabled = true
-    // }
+    }
 
 
     // isTimerRunning이 true가 되면 해당 블록이 실행
