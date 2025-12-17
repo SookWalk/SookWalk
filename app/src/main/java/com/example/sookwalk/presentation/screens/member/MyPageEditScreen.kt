@@ -39,6 +39,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.sookwalk.R
+import com.example.sookwalk.presentation.components.BottomNavBar
 import com.example.sookwalk.presentation.components.TopBar
 import com.example.sookwalk.presentation.viewmodel.MajorViewModel
 import com.example.sookwalk.presentation.viewmodel.UserViewModel
@@ -180,7 +181,9 @@ fun MyPageEditScreen(
             TopBar(screenName = "마이페이지",
                 { navController.popBackStack() },
                 {navController.navigate("alarm")},
-                {}) }
+                {}) },
+
+        bottomBar = { BottomNavBar(navController = navController) },
 
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {

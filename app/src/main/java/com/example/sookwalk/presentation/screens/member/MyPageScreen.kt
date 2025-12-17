@@ -52,6 +52,7 @@ import coil.request.ImageRequest
 import com.example.sookwalk.R
 import com.example.sookwalk.data.local.entity.user.UserEntity
 import com.example.sookwalk.navigation.Routes
+import com.example.sookwalk.presentation.components.BottomNavBar
 import com.example.sookwalk.presentation.components.TopBar
 import com.example.sookwalk.presentation.viewmodel.UserViewModel
 import com.google.firebase.Firebase
@@ -118,7 +119,9 @@ fun MyPageScreen(
                 {navController.navigate("alarm")},
                 {}
             )
-        }
+        },
+
+        bottomBar = { BottomNavBar(navController = navController) }
 
     ) { innerPadding ->
         Box(
