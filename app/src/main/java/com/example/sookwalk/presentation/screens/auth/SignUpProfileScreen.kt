@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,8 +15,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -105,6 +109,15 @@ fun SignUpProfileScreen(
     var major by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
 
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+
+    // 포커스가 잡히면 리스트를 펼침
+    LaunchedEffect(isFocused) {
+        if (isFocused) expanded = true
+    }
+
     // MajorViewModel의 상태를 수집
     val departments by majorViewModel.departments.collectAsState()
 
@@ -114,9 +127,12 @@ fun SignUpProfileScreen(
     }
 
     // 입력된 텍스트가 포함된 전공만 필터링
-    val filtered = remember(major) {
-        if (major.isBlank()) departments
-        else departments.filter { it.contains(major, ignoreCase = true) }
+    val filtered = remember(major, departments) {
+        if (major.isBlank()) {
+            departments // 검색어가 없으면 전체 리스트를 보여줌
+        } else {
+            departments.filter { it.contains(major, ignoreCase = true) }
+        }
     }
 
     Scaffold(
@@ -228,7 +244,7 @@ fun SignUpProfileScreen(
                                 vertical = 8.dp
                             )
                         ) {
-                            Text("중복 확인", style = MaterialTheme.typography.displaySmall)
+                            Text("중복 확인", style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
@@ -248,6 +264,7 @@ fun SignUpProfileScreen(
                                 major = it
                                 expanded = true
                             },
+                            interactionSource = interactionSource,
                             placeholder = { Text("소속 학부를 입력하세요") },
                             modifier = Modifier
                                 .fillMaxWidth(),
@@ -267,18 +284,29 @@ fun SignUpProfileScreen(
                         // 아래쪽 고정 Dropdown Box
                         if (expanded && filtered.isNotEmpty()) {
 
-                            Column {
-                                filtered.forEach { dept ->
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 200.dp) // 최대 높이를 지정해야 스크롤이 작동함
+                                    .background(Color.White)
+                            ) {
+                                // import androidx.compose.foundation.lazy.items 확인 필수
+                                items(filtered.size) { index ->
+                                    val dept = filtered[index]
+
+                                    // 텍스트 하이라이트 로직
                                     val annotated = buildAnnotatedString {
                                         val startIndex = dept.indexOf(major, ignoreCase = true)
-                                        if (startIndex >= 0) {
+                                        if (startIndex >= 0 && major.isNotEmpty()) {
                                             val endIndex = startIndex + major.length
                                             append(dept.substring(0, startIndex))
                                             withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
                                                 append(dept.substring(startIndex, endIndex))
                                             }
                                             append(dept.substring(endIndex))
-                                        } else append(dept)
+                                        } else {
+                                            append(dept)
+                                        }
                                     }
 
                                     Text(
@@ -289,7 +317,7 @@ fun SignUpProfileScreen(
                                                 major = dept
                                                 expanded = false
                                             }
-                                            .padding(vertical = 8.dp, horizontal = 12.dp),
+                                            .padding(vertical = 12.dp, horizontal = 16.dp),
                                         color = Color.Black
                                     )
                                 }
@@ -298,7 +326,6 @@ fun SignUpProfileScreen(
                     }
                 }
             }
-
         }
     }
 }

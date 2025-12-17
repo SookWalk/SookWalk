@@ -7,10 +7,10 @@ import androidx.room.PrimaryKey
 data class UserEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val major: String,
-    val email: String,
-    var nickname: String,
-    var loginId: String,
-    var profileImageUrl: String,
-    var uid: String
+    val major: String = "",
+    val email: String = "",
+    var nickname: String = "",
+    var loginId: String = "",
+    var profileImageUrl: String = "",
+    var uid: String = ""
 )

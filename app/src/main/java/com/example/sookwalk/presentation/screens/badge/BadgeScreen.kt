@@ -202,7 +202,7 @@ fun BadgeScreen(
                 onMenuClick = onMenuClick
             )
         },
-        bottomBar = { BottomNavBar(navController = rememberNavController()) },
+        bottomBar = { BottomNavBar(navController = navController) },
         containerColor = Color.White,
     ) { paddingValues ->
 
