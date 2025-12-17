@@ -111,7 +111,7 @@ fun BadgeScreen(
             "의리왕",
             "레벨 1/5",
             R.drawable.ic_handshaking,
-            "\uD83E\uDD70 숙워크와 함께한지 50일 되었습니다!",
+            "\uD83E\uDD70 숙워크와 함께한지 50일 되었습니다! (dummy 데이터) ",
             null
         ),
         BadgeInfo(null, null, null, "", null),
@@ -123,6 +123,17 @@ fun BadgeScreen(
     // 베스트 뱃지 찾기 - 각 뱃지의 실제 레벨(숫자)을 맵핑하여 비교
     val bestBadge = badges
         .filter { it.title != null } // 더미 데이터(null) 제외
+        .filter { badge ->
+            // 각 뱃지의 현재 레벨 숫자를 가져옴
+            val levelValue = when (badge.title) {
+                "워킹 마스터" -> stepLevel
+                "챌린지 고수" -> challengeLevel
+                "추억 수집가" -> placeLevel
+                "챔피언 워커" -> rankLevel
+                else -> 0
+            }
+            levelValue > 0 // 레벨이 0보다 큰 것만 남김
+        }
         .maxByOrNull { badge ->
             when (badge.title) {
                 "워킹 마스터" -> stepLevel
@@ -277,7 +288,7 @@ fun BadgeScreen(
                     if (isLocked) {
                         // 잠긴 경우 스낵바 실행
                         scope.launch {
-                            snackbarHostState.showSnackbar("아직 획득하지 못한 뱃지입니다.")
+                            snackbarHostState.showSnackbar("아직 획득하지 않은 뱃지입니다.")
                         }
                     } else {
                         // 획득한 경우 팝업 노출
@@ -438,6 +449,8 @@ fun SmallBadgeCard(
         return
     }
 
+    val isLocked = badge.level?.contains("0/5") == true
+
     Box( modifier = Modifier.clickable{ onClick() } ) {
         Card(
             shape = RoundedCornerShape(12.dp),
@@ -447,36 +460,52 @@ fun SmallBadgeCard(
                 .fillMaxWidth()
                 .height(120.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            Box(
+                modifier = Modifier.fillMaxSize()
             ) {
-                badge.imageRes?.let {
-                    Image(
-                        painter = painterResource(id = it),
-                        contentDescription = badge.title,
-                        modifier = Modifier.size(48.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    if(!isLocked){
+                        badge.imageRes?.let {
+                            Image(
+                                painter = painterResource(id = it),
+                                contentDescription = badge.title,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                    } else {
+                        // 잠겨있을 때 보여줄 아이콘 혹은 빈 공간
+                        Icon(
+                            imageVector = Icons.Default.WorkspacePremium,
+                            contentDescription = null,
+                            tint = Color(0xFFE0E0E0), // 아주 연한 회색
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = if (isLocked) "???" else (badge.title ?: ""),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 14.sp
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = badge.level ?: "",
+                        fontSize = 10.sp,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = badge.title ?: "",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 14.sp
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = badge.level ?: "",
-                    fontSize = 10.sp,
-                    color = Color.Gray,
-                    textAlign = TextAlign.Center
-                )
             }
         }
     }
