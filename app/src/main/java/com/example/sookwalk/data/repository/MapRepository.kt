@@ -1,6 +1,7 @@
 package com.example.sookwalk.data.repository
 
 import android.graphics.Bitmap
+import android.util.Log
 import com.example.sookwalk.data.local.dao.FavoriteDao
 import com.example.sookwalk.data.local.dao.SearchHistoryDao
 import com.example.sookwalk.data.local.entity.map.CategoryWithCount
@@ -16,6 +17,7 @@ import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRe
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.api.net.SearchByTextRequest
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.AggregateSource
 import com.google.firebase.firestore.FirebaseFirestore
 import jakarta.inject.Inject
 import kotlinx.coroutines.async
@@ -181,9 +183,10 @@ class MapRepository @Inject constructor(
                     "latitude" to place.latitude,
                     "longitude" to place.longitude
                 )
-                newDocRef?.set(firestoreData)
+                newDocRef?.set(firestoreData)?.await()
             }
         }
+        updatePlaceStats()
     }
 
     suspend fun syncFromFirebase() {
@@ -252,6 +255,29 @@ class MapRepository @Inject constructor(
                 }
             }
 
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        updatePlaceStats()
+    }
+
+    suspend fun updatePlaceStats() {
+        val userRef = userCol() ?: return
+
+        try {
+            val countQuery = userRef.collection("saved_places").count()
+            val snapshot = countQuery.get(AggregateSource.SERVER).await()
+            val totalCount = snapshot.count
+
+            val statsData = hashMapOf(
+                "total" to totalCount,
+                "date" to com.google.firebase.Timestamp.now()
+            )
+
+            userRef.collection("stats").document("place").set(statsData)
+                .addOnSuccessListener {
+                    Log.d("MapRepository", "📊 통계 업데이트 완료: $totalCount 개")
+                }
         } catch (e: Exception) {
             e.printStackTrace()
         }
