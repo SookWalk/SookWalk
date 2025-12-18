@@ -47,6 +47,8 @@ class StepForegroundService : Service(), SensorEventListener {
 
     private var isUploading = false
 
+    private var hasPendingGoalSync = false
+
     override fun onCreate() {
         super.onCreate()
         startForegroundService()
@@ -103,37 +105,43 @@ class StepForegroundService : Service(), SensorEventListener {
             val totalSteps = stepRepository.addToTotal(diff)
 
             val isGoalJustCompleted = goalRepository.updateActiveGoalsProgressLocal(diff)
+
             if (isGoalJustCompleted) {
-                android.util.Log.w("StepTrap", "🎯 [목표 달성 감지] 목표 완료로 인해 즉시 업로드 트리거됨!")
+                hasPendingGoalSync = true
+                android.util.Log.w("StepService", "🎯 [목표 달성 감지] 동기화 대기열에 등록됨.")
             }
             val currentTime = System.currentTimeMillis()
             val stepDiff = todayAddedTotal - lastUploadedTodaySteps
             val timeDiff = currentTime - lastUploadTime
 
-            if (!isUploading && (stepDiff >= 50 || isGoalJustCompleted || (stepDiff > 0 && timeDiff >= 3 * 60 * 1000))) {
+            if (!isUploading && (stepDiff >= 50 || hasPendingGoalSync || (stepDiff > 0 && timeDiff >= 3 * 60 * 1000))) {
                 isUploading = true
+
+                lastUploadedTodaySteps = todayAddedTotal
+                lastUploadTime = currentTime
+                val todayStr = LocalDate.now().toString()
+
                 try {
-                    val oldLastSteps = lastUploadedTodaySteps // 혹시 몰라 백업 (필요시 롤백용이지만 지금은 그냥 둠)
-                    lastUploadedTodaySteps = todayAddedTotal
-                    lastUploadTime = currentTime
-
-                    val todayStr = LocalDate.now().toString()
-
                     stepRepository.uploadDailySteps(todayStr, todayAddedTotal)
                     stepRepository.uploadTotalSteps(totalSteps)
                     stepRepository.updateStepStats(todayStr, totalSteps)
-                    stepRepository.addStepsToCollegeAndDepartment(stepDiff)
+                    stepRepository.addStepsToCollegeAndDepartment(stepDiff) // 여기가 에러 나도...
+                } catch (e: Exception) {
+                    android.util.Log.e("StepService", "❌ 걸음 수 업로드 중 오류 (무시하고 목표 동기화 진행): ${e.message}")
+                }
+
+                try {
                     goalRepository.syncActiveGoalsToFirebase()
 
-                    android.util.Log.d("StepService", "☁️ 동기화 시도 완료")
-
+                    if (hasPendingGoalSync) {
+                        hasPendingGoalSync = false
+                        android.util.Log.d("StepService", "✅ 목표 대기열 처리 완료")
+                    }
                 } catch (e: Exception) {
-                    android.util.Log.e("StepService", "❌ 업로드 실패: ${e.message}")
-                    e.printStackTrace()
-                    // (선택) 실패했으니 기준점을 다시 되돌릴 수도 있지만,
-                    // 무한 루프를 막기 위해 그냥 두는 게 낫습니다.
+                    android.util.Log.e("StepService", "❌ 목표 동기화 실패: ${e.message}")
                 } finally {
                     isUploading = false
+                    android.util.Log.d("StepService", "☁️ 동기화 시도 종료")
                 }
             }
         }

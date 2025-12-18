@@ -24,15 +24,23 @@ object NotificationHelper {
     private const val NOTIFICATION_ACHIEVE_ID = 1003
 
     // 알림 채널을 만드는 함수
-    fun createNotificationChannel(context: Context){
-        if (Build.VERSION.SDK_INT >=Build.VERSION_CODES.O){
+    fun createNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_HIGH // 팝업을 위해 HIGH 필수
             ).apply {
                 description = "Main channel for notifications"
+                // 소리와 진동 설정 추가 (확실히 띄우기 위해)
+                enableLights(true)
+                enableVibration(true)
             }
+
+            // ⭐ 이 코드가 반드시 있어야 시스템이 채널을 인식합니다!
+            notificationManager.createNotificationChannel(channel)
         }
     }
 
@@ -110,12 +118,13 @@ object NotificationHelper {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
 
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             == PackageManager.PERMISSION_GRANTED
         ) {
             NotificationManagerCompat.from(context)
-                .notify(NOTIFICATION_EVERYDAY_ID, achieveBuilder.build())
+                .notify(NOTIFICATION_ACHIEVE_ID, achieveBuilder.build())
         }
     }
 }

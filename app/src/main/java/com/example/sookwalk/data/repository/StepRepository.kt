@@ -93,37 +93,40 @@ class StepRepository @Inject constructor(
         val uid = currentUserId() ?: return
         val userRef = db.collection("users").document(uid)
 
-        db.runTransaction { transaction ->
-            val now = Timestamp.now()
+        try {
+            db.runTransaction { transaction ->
+                val now = Timestamp.now()
+                val userSnap = transaction.get(userRef)
 
-            val userSnap = transaction.get(userRef)
-            val department = Department.fromId(
-                userSnap.getString("deptId")
-                    ?: throw IllegalStateException("deptId 없음")
-            )
+                // [수정] throw 대신 return@runTransaction 사용
+                // 정보가 없으면 에러를 내는 게 아니라, 그냥 이 트랜잭션만 종료합니다.
+                val deptId = userSnap.getString("deptId") ?: return@runTransaction
+                val collegeId = userSnap.getString("collegeId") ?: return@runTransaction
 
-            val college = College.fromId(
-                userSnap.getString("collegeId")
-                    ?: throw IllegalStateException("collegeId 없음")
-            )
+                val department = Department.fromId(deptId)
+                val college = College.fromId(collegeId)
 
-            val deptRef = deptDoc(department.id)
-            val collegeRef = collegeDoc(college.id)
+                val deptRef = deptDoc(department.id)
+                val collegeRef = collegeDoc(college.id)
 
-            transaction.update(
-                deptRef, mapOf(
-                    "totalSteps" to FieldValue.increment(delta.toLong()),
-                    "updatedAt" to now
+                transaction.update(
+                    deptRef, mapOf(
+                        "totalSteps" to FieldValue.increment(delta.toLong()),
+                        "updatedAt" to now
+                    )
                 )
-            )
 
-            transaction.update(
-                collegeRef, mapOf(
-                    "totalSteps" to FieldValue.increment(delta.toLong()),
-                    "updatedAt" to now
+                transaction.update(
+                    collegeRef, mapOf(
+                        "totalSteps" to FieldValue.increment(delta.toLong()),
+                        "updatedAt" to now
+                    )
                 )
-            )
-        }.await()
+            }.await()
+        } catch (e: Exception) {
+            // 랭킹 업데이트 실패가 전체 걸음 수 저장이나 목표 동기화를 방해하지 않도록 로그만 남김
+            android.util.Log.e("StepRepo", "⚠️ 랭킹 업데이트 건너뜀: ${e.message}")
+        }
     }
 
     suspend fun syncStepsFromFirebase() {

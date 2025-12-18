@@ -89,9 +89,10 @@ object AppModule {
     fun provideGoalRepository(
         goalDao: GoalDao,
         db: FirebaseFirestore,
-        auth: FirebaseAuth
+        auth: FirebaseAuth,
+        @ApplicationContext context: Context
     ): GoalRepository {
-        return GoalRepository(goalDao, db, auth)
+        return GoalRepository(goalDao, db, auth, context)
     }
 
     // Step
