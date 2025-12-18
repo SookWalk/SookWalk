@@ -66,7 +66,9 @@ import com.google.firebase.storage.storage
 fun MyPageScreen(
     viewModel: UserViewModel,
     navController: NavController,
-    // backStackEntry: NavBackStackEntry
+    onBack: () -> Unit,
+    onAlarmClick: () -> Unit,
+    onMenuClick: () -> Unit,
 ) {
 
 
@@ -114,10 +116,10 @@ fun MyPageScreen(
 
         topBar = {
             TopBar(
-                screenName = "마이페이지",
-                { navController.popBackStack() },
-                {navController.navigate("alarm")},
-                {}
+                screenName = "목표",
+                onBack = onBack,
+                onMenuClick = onMenuClick,
+                onAlarmClick = onAlarmClick
             )
         },
 

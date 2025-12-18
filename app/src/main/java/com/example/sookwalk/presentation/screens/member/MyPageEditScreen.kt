@@ -58,7 +58,10 @@ import kotlinx.coroutines.tasks.await
 fun MyPageEditScreen(
     userViewModel: UserViewModel,
     majorViewModel: MajorViewModel,
-    navController: NavController
+    navController: NavController,
+    onBack: () -> Unit,
+    onAlarmClick: () -> Unit,
+    onMenuClick: () -> Unit,
     ) {
 
     // Firebase에서 현재 유저의 uid를 가져온다
@@ -188,10 +191,13 @@ fun MyPageEditScreen(
 
     Scaffold(
         topBar = {
-            TopBar(screenName = "마이페이지",
-                { navController.popBackStack() },
-                {navController.navigate("alarm")},
-                {}) },
+            TopBar(
+                screenName = "목표",
+                onBack = onBack,
+                onMenuClick = onMenuClick,
+                onAlarmClick = onAlarmClick
+            )
+        },
 
         bottomBar = { BottomNavBar(navController = navController) },
 
