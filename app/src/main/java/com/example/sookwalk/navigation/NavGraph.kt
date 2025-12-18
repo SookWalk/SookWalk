@@ -105,7 +105,14 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 navController = navController,
                 scope = scope
             ) {
-                MyPageScreen(userViewModel, navController)
+                MyPageScreen(userViewModel, navController,
+                    onBack = { navController.popBackStack() },
+                    onAlarmClick = { navController.navigate(Routes.NOTIFICATION) },
+                    onMenuClick = {
+                        scope.launch {
+                            if (drawerState.isClosed) drawerState.open() else drawerState.close()
+                        }
+                    })
             }
         }
 
@@ -266,7 +273,16 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 navController = navController,
                 scope = scope
             ) {
-                MyPageEditScreen(userViewModel, majorViewModel, navController)
+                MyPageEditScreen(
+                    userViewModel, majorViewModel, navController,
+
+                    onBack = { navController.popBackStack() },
+                    onAlarmClick = { navController.navigate(Routes.NOTIFICATION) },
+                    onMenuClick = {
+                        scope.launch {
+                            if (drawerState.isClosed) drawerState.open() else drawerState.close()
+                        }
+                    })
             }
         }
 
